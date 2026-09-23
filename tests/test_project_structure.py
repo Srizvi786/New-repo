@@ -147,6 +147,13 @@ def test_net_m11():
     assert "HostBtn" in _read("src/ui/MainMenu.tscn")
     assert "_on_host" in _read("main/Main.gd")
 
+def test_polish_m13():
+    assert "PausePanel" in _read("src/ui/HUD.tscn")
+    assert "toggle_pause" in _read("src/ui/HUD.gd")
+    assert "MasterSlider" in _read("src/ui/MainMenu.tscn")
+    assert '"1.0.0"' in _read("export_presets.cfg")
+    assert "Android-AAB" in _read("export_presets.cfg")
+
 def test_no_secrets_committed():
     # NOTE: pattern uses dashed key header to avoid self-matching this file.
     pat = re.compile(r"ghp_[A-Za-z0-9]{10,}|BEGIN " + "PRIVATE KEY-----")

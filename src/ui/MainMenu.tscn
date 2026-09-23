@@ -81,6 +81,38 @@ max_value=3.0
 step=0.05
 value=1.0
 
+[node name="MasterRow" type="HBoxContainer" parent="Panel/VBox"]
+layout_mode=2
+
+[node name="MasterLabel" type="Label" parent="Panel/VBox/MasterRow"]
+layout_mode=2
+size_flags_horizontal=3
+text="Master Vol"
+
+[node name="MasterSlider" type="HSlider" parent="Panel/VBox/MasterRow"]
+layout_mode=2
+size_flags_horizontal=3
+min_value=0.0
+max_value=1.0
+step=0.05
+value=0.8
+
+[node name="SFXRow" type="HBoxContainer" parent="Panel/VBox"]
+layout_mode=2
+
+[node name="SFXLabel" type="Label" parent="Panel/VBox/SFXRow"]
+layout_mode=2
+size_flags_horizontal=3
+text="SFX Vol"
+
+[node name="SFXSlider" type="HSlider" parent="Panel/VBox/SFXRow"]
+layout_mode=2
+size_flags_horizontal=3
+min_value=0.0
+max_value=1.0
+step=0.05
+value=0.9
+
 [node name="StatusLabel" type="Label" parent="Panel/VBox"]
 layout_mode=2
 theme_override_font_sizes/font_size=13

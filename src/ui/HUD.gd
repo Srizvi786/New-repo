@@ -18,6 +18,7 @@ var match_mgr: Node = null
 @onready var _panel: PanelContainer = $InvPanel
 @onready var _cap: Label = $InvPanel/Margin/InvBox/CapLabel
 @onready var _items_box: VBoxContainer = $InvPanel/Margin/InvBox/ItemsBox
+@onready var _pause: PanelContainer = $PausePanel
 
 var player: Node = null
 var weapon: Node = null
@@ -34,6 +35,8 @@ func bind(p: Node, w: Node) -> void:
 	visible = true
 	_hit_t = 0.0
 	_panel.visible = false
+	_pause.visible = false
+	_connect_pause_buttons()
 	loot_mgr = get_tree().get_first_node_in_group("loot_manager")
 	if weapon and weapon.has_signal("hit_confirmed"):
 		if not weapon.is_connected("hit_confirmed", _on_hit_confirmed):
@@ -132,10 +135,37 @@ func _process(_delta: float) -> void:
 func _input(event: InputEvent) -> void:
 	if not visible or player == null:
 		return
+	if event.is_action_pressed("pause") and bool(player.get("alive")):
+		toggle_pause()
+		return
+	if get_tree().paused:
+		return
 	if event.is_action_pressed("inventory"):
 		toggle_inventory()
 	elif event.is_action_pressed("heal"):
 		_quick_heal()
+
+func toggle_pause() -> void:
+	var p := not get_tree().paused
+	get_tree().paused = p
+	_pause.visible = p
+	_panel.visible = false
+	if p:
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+
+func _connect_pause_buttons() -> void:
+	var rb: Button = $PausePanel/Margin/VBox/ResumeBtn
+	var mb: Button = $PausePanel/Margin/VBox/MenuBtn
+	if not rb.is_connected("pressed", toggle_pause):
+		rb.pressed.connect(toggle_pause)
+	if not mb.is_connected("pressed", _on_quit_menu):
+		mb.pressed.connect(_on_quit_menu)
+
+func _on_quit_menu() -> void:
+	get_tree().paused = false
+	var m = get_tree().get_first_node_in_group("main")
+	if m:
+		m.call("_to_menu")
 
 func _quick_heal() -> void:
 	# First bandage/medkit stack found.

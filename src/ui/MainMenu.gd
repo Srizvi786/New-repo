@@ -23,6 +23,12 @@ func _ready() -> void:
 		sens = float(get_node("/root/SaveSystem").get("sensitivity"))
 	_quality.select({"auto": 0, "low": 1, "medium": 2, "high": 3}.get(preset, 0))
 	_sens.value = sens
+	if has_node("/root/SaveSystem"):
+		var sv0 := get_node("/root/SaveSystem")
+		$Panel/VBox/MasterRow/MasterSlider.value = float(sv0.get("master_volume"))
+		$Panel/VBox/SFXRow/SFXSlider.value = float(sv0.get("sfx_volume"))
+	$Panel/VBox/MasterRow/MasterSlider.value_changed.connect(_on_vol.bind("master_volume", "master"))
+	$Panel/VBox/SFXRow/SFXSlider.value_changed.connect(_on_vol.bind("sfx_volume", "sfx"))
 	_status.text = "OFFLINE MATCH — 12 combatants, shrinking zone"
 	$Panel/VBox/PlayButton.pressed.connect(_on_play)
 	$Panel/VBox/NetRow/HostBtn.pressed.connect(func() -> void: emit_signal("host_requested"))
@@ -67,3 +73,12 @@ func _on_sens(v: float) -> void:
 		var sv := get_node("/root/SaveSystem")
 		sv.set("sensitivity", v)
 		sv.call("save_settings")
+
+func _on_vol(v: float, key: String, _bus: String) -> void:
+	if has_node("/root/SaveSystem"):
+		var sv := get_node("/root/SaveSystem")
+		sv.set(key, v)
+		sv.call("save_settings")
+	if has_node("/root/AudioManager"):
+		get_node("/root/AudioManager").call("apply_volumes")
+		get_node("/root/AudioManager").call("play_ui")

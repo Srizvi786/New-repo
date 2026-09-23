@@ -7,12 +7,16 @@
 
 No PUBG / Free Fire / Fortnite / Call of Duty characters, maps, UI, sounds, logos, assets, or code are used. All art in this repo is procedural placeholder or original, designed to be replaced by licensed/original PBR assets via the pipeline in `docs/asset-pipeline.md`.
 
-## Status
+## Status — v1.0.0 (all milestones complete)
 
-- Milestone 0 — repo + architecture: DONE
-- Milestone 1 — player + camera + Android touch + test arena: DONE
-- Milestone 2 — character rig pipeline (articulated placeholder, LOD, swap tool): DONE
-- Milestones 3–13: planned (see `docs/architecture.md`)
+- M0 repo + architecture ✅ • M1 player + camera + touch ✅ • M2 character rig ✅
+- M3 weapons ✅ • M4 combat ✅ • M5 loot + inventory ✅ • M6 battle map ✅
+- M7 bots ✅ • M8 match + results ✅ • M9 safe zone ✅ • M10 optimization ✅
+- M11 LAN multiplayer baseline ✅ • M12 build pipeline ✅ • M13 polish ✅
+
+Install: grab `dustline-debug.apk` from the latest GitHub Release (or Actions
+artifact). arm64 Android, landscape. Offline 12-combatant matches by default;
+HOST/JOIN in the menu for same-WiFi loopback play (see `docs/multiplayer.md`).
 
 ## Quick start (desktop check)
 

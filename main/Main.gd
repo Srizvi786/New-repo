@@ -33,6 +33,7 @@ const TFX := preload("res://src/weapons/TracerFX.gd")
 const RESULTS_SCENE := "res://src/ui/Results.tscn"
 
 func _ready() -> void:
+	add_to_group("main")
 	# Runtime helpers (kept out of the .tscn so Main.tscn stays trivial/robust).
 	var im_script: Script = load("res://src/input/InputManager.gd")
 	input_mgr = Node.new()

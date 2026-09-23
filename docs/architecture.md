@@ -37,9 +37,11 @@ Main (main/Main.tscn, Main.gd)
 - `PLAYER STATE` (Player.gd exported vars + `get_state_dict()`), `MATCH STATE` (MatchManager stub), `WEAPON STATE` (WeaponResource instance + WeaponView), `WORLD STATE` (arena seed + loot table stub).
 - All damage/zone decisions will be server-authoritative. Bots run local simulation (M7) using same interfaces.
 
-## Milestones
+## Milestones (all complete in v1.0.0)
 
-- M0 repo+arch — done. M1 player+camera+touch — done. M2 character pipeline (real rig spec, placeholder swap). M3 weapons. M4 combat. M5 loot/inventory. M6 map. M7 bots. M8 match. M9 zone. M10 optimization. M11 net arch. M12 automated build. M13 polish.
+M0 repo+arch • M1 player+camera+touch • M2 rig+LOD • M3 weapons • M4 combat •
+M5 loot/inventory • M6 map • M7 bots • M8 match/results • M9 zone •
+M10 optimization • M11 net baseline • M12 build • M13 polish.
 
 ## Validation
 
