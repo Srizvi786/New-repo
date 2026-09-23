@@ -35,6 +35,18 @@ max_value=100.0
 value=100.0
 show_percentage=false
 
+[node name="ArmorLabel" type="Label" parent="TopLeft"]
+layout_mode=2
+theme_override_font_sizes/font_size=14
+text="ARMOR"
+
+[node name="Armor" type="ProgressBar" parent="TopLeft"]
+layout_mode=2
+custom_minimum_size=Vector2(220, 12)
+max_value=100.0
+value=0.0
+show_percentage=false
+
 [node name="TopRight" type="VBoxContainer" parent="."]
 layout_mode=1
 anchors_preset=11
@@ -93,3 +105,10 @@ mouse_filter=2
 layout_mode=2
 custom_minimum_size=Vector2(6, 6)
 color=Color(1, 1, 1, 0.9)
+
+[node name="Hitmark" type="Label" parent="Crosshair"]
+layout_mode=2
+theme_override_font_sizes/font_size=28
+theme_override_colors/font_color=Color(1, 0.25, 0.2, 1)
+text="X"
+visible=false

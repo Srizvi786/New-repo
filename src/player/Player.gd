@@ -5,6 +5,9 @@ extends CharacterBody3D
 class_name Player
 
 const CRig := preload("res://src/player/CharacterRig.gd")
+const HealthScript := preload("res://src/combat/Health.gd")
+
+signal died(attacker: String)
 
 signal fired
 signal jumped
@@ -31,7 +34,10 @@ var aiming: bool = false
 var sprinting: bool = false
 var on_ground_last: bool = true
 var anim_state: String = "idle" # idle|walk|run|sprint|jump|fall|crouch|crouch_walk|aim
-var health: float = 100.0 # stub; full combat in M4
+var health: float = 100.0 # synced from Health node; full combat in M4
+var armor: float = 0.0
+var alive: bool = true
+var health_node = null
 
 var character_rig: CRig = null
 var _stand_height: float = 1.8
@@ -41,7 +47,12 @@ var _crouch_height: float = 1.2
 
 func _ready() -> void:
 	add_to_group("player")
+	add_to_group("damageable")
 	rig = $CameraRig
+	health_node = HealthScript.new()
+	health_node.name = "Health"
+	add_child(health_node)
+	health_node.connect("died", _on_died)
 	character_rig = CRig.new()
 	character_rig.name = "CharacterRig"
 	add_child(character_rig)
@@ -77,6 +88,14 @@ func _sens_mult() -> float:
 	return s
 
 func _physics_process(delta: float) -> void:
+	if not alive:
+		if not is_on_floor():
+			velocity.y -= 22.0 * delta
+		else:
+			velocity.x = 0.0
+			velocity.z = 0.0
+		move_and_slide()
+		return
 	# --- look ---
 	var look := Vector2.ZERO
 	if input_mgr:
@@ -157,6 +176,31 @@ func _physics_process(delta: float) -> void:
 	if firing and weapon_view and weapon_view.has_method("try_fire"):
 		if weapon_view.call("try_fire", aiming, move_speed, just_pressed):
 			emit_signal("fired")
+	if health_node:
+		health = float(health_node.get("current"))
+		armor = float(health_node.get("armor"))
+
+# --- M4 damage interface (WeaponView hits call this) ---
+func take_damage(amount: float, is_head: bool, attacker: String, _from: Vector3 = Vector3.ZERO) -> void:
+	if not alive or health_node == null:
+		return
+	health_node.take_damage(amount, is_head, attacker)
+	health = float(health_node.get("current"))
+	armor = float(health_node.get("armor"))
+	if alive:
+		play_hit()
+		if has_node("/root/AudioManager"):
+			get_node("/root/AudioManager").call("play_hit", is_head)
+
+func is_head_hit(pos: Vector3) -> bool:
+	if character_rig and character_rig.get_head_marker():
+		return pos.y > character_rig.get_head_marker().global_position.y - 0.12
+	return pos.y > global_position.y + 1.45
+
+func _on_died(attacker: String) -> void:
+	alive = false
+	play_death()
+	emit_signal("died", attacker)
 
 func _rotate_look(d: Vector2) -> void:
 	yaw -= d.x

@@ -48,6 +48,12 @@ func play_gunshot(pitch: float = 1.0) -> void:
 
 func play_reload() -> void:
 	_sfx.stream = _blip(330.0, 0.12)
+	_sfx.pitch_scale = 1.0
+	_sfx.play()
+
+func play_hit(head: bool = false) -> void:
+	_sfx.stream = _blip(1200.0 if head else 700.0, 0.06)
+	_sfx.pitch_scale = 1.0
 	_sfx.play()
 
 func play_footstep() -> void:

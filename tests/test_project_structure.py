@@ -74,8 +74,18 @@ def test_weapon_data_driven():
     assert os.path.isfile(os.path.join(ROOT, "src/weapons/WeaponInventory.gd"))
     assert os.path.isfile(os.path.join(ROOT, "src/weapons/AttachmentData.gd"))
 
-def test_no_secrets_committed():
-    # NOTE: pattern uses dashed key header to avoid self-matching this file.
+def test_combat_m4():
+    h = _read("src/combat/Health.gd")
+    for f in ["take_damage", "armor", "absorb", "died", "heal"]:
+        assert f in h, f"Health.gd missing {f}"
+    p = _read("src/player/Player.gd")
+    for f in ["take_damage", "is_head_hit", "alive", "play_hit", "play_death"]:
+        assert f in p, f"Player.gd missing combat {f}"
+    hud = _read("src/ui/HUD.gd")
+    assert "show_hitmarker" in hud and "Armor" in hud
+    assert "Hitmark" in _read("src/ui/HUD.tscn")
+
+def test_no_secrets_committed():    # NOTE: pattern uses dashed key header to avoid self-matching this file.
     pat = re.compile(r"ghp_[A-Za-z0-9]{10,}|BEGIN " + "PRIVATE KEY-----")
     for root, _dirs, files in os.walk(ROOT):
         if ".git" in root or ".godot" in root:

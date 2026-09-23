@@ -53,6 +53,18 @@ func _on_play() -> void:
 	await gm.call("start_play", world_root)
 	_spawn_player()
 
+func _on_player_died(_attacker: String) -> void:
+	# M4 test loop: redeploy after 3s. M8 replaces this with the results screen.
+	await get_tree().create_timer(3.0).timeout
+	if hud:
+		hud.queue_free()
+		hud = null
+	if touch:
+		pass # reused across respawns
+	var gm := get_node("/root/GameManager")
+	await gm.call("start_play", world_root)
+	_spawn_player()
+
 func _clear_world() -> void:
 	for c in world_root.get_children():
 		c.queue_free()
@@ -79,16 +91,18 @@ func _spawn_player() -> void:
 	var cam := rig.call("get_camera") as Camera3D
 	weapon.call("setup", cam, player)
 	player.call("bind", input_mgr, weapon)
-	# HUD
+	if player.has_signal("died"):
+		player.connect("died", _on_player_died)
+	# HUD (rebuilt per life; touch controls persist across respawns).
 	var hpacked: PackedScene = load(HUD_SCENE)
 	hud = hpacked.instantiate() as Control
 	ui_root.add_child(hud)
 	hud.call("bind", player, weapon)
-	# Touch controls (visible only on touch devices).
-	var tpacked: PackedScene = load(TOUCH_SCENE)
-	touch = tpacked.instantiate() as Control
-	ui_root.add_child(touch)
-	touch.call("bind_manager", input_mgr)
+	if touch == null:
+		var tpacked: PackedScene = load(TOUCH_SCENE)
+		touch = tpacked.instantiate() as Control
+		ui_root.add_child(touch)
+		touch.call("bind_manager", input_mgr)
 	if DisplayServer.is_touchscreen_available():
 		touch.visible = true
 	else:

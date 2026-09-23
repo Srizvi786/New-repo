@@ -18,6 +18,7 @@ REQUIRED = [
     "src/player/Player.gd",
     "src/player/CameraRig.gd",
     "src/player/CharacterRig.gd",
+    "src/combat/Health.gd",
     "tools/import_character.py",
     "src/input/InputManager.gd",
     "src/input/VirtualJoystick.gd",
