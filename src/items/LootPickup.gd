@@ -52,6 +52,24 @@ func _ready() -> void:
 	add_child(label)
 
 func _process(delta: float) -> void:
+	# Distance-culled idle animation: ~40 pickups stay nearly free off-screen.
+	if _player_far():
+		return
 	_t += delta
 	position.y = _base_y + sin(_t * 2.0) * 0.08
 	_mi.rotation.y += delta * 0.8
+
+var _far_check_t: float = 0.0
+var _is_far: bool = false
+
+func _player_far() -> bool:
+	_far_check_t -= get_process_delta_time()
+	if _far_check_t > 0.0:
+		return _is_far
+	_far_check_t = 0.5
+	var p = get_tree().get_first_node_in_group("player")
+	if p == null:
+		_is_far = false
+		return false
+	_is_far = (p as Node3D).global_position.distance_to(global_position) > 40.0
+	return _is_far

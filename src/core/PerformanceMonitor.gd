@@ -58,7 +58,8 @@ func _process(delta: float) -> void:
 	var mem_mb := Performance.get_monitor(Performance.MEMORY_STATIC) / 1048576.0
 	var draws := int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))
 	var objs := Performance.get_monitor(Performance.OBJECT_COUNT)
-	_label.text = "PERF (dev)\nFPS: %d\nframe: %.2f ms\nphys: %.2f ms\nmem: %.1f MB\ndraws: %d\nobjects: %d" % [int(fps), proc_ms, phys_ms, mem_mb, int(draws), int(objs)]
+	var bots := get_tree().get_nodes_in_group("bots").size()
+	_label.text = "PERF (dev)\nFPS: %d\nframe: %.2f ms\nphys: %.2f ms\nmem: %.1f MB\ndraws: %d\nobjects: %d\nbots: %d" % [int(fps), proc_ms, phys_ms, mem_mb, int(draws), int(objs), bots]
 
 func toggle() -> void:
 	_visible_panel = not _visible_panel

@@ -131,6 +131,13 @@ def test_zone_m9():
     assert "ZoneLabel" in _read("src/ui/HUD.tscn")
     assert "ZONE_SCRIPT" in _read("main/Main.gd")
 
+def test_opt_m10():
+    q = _read("src/core/QualityManager.gd")
+    assert "dynamic_res" in q and "DYN_LEVELS" in q
+    assert "clear_pool" in _read("src/weapons/TracerFX.gd")
+    assert "40.0" in _read("src/items/LootPickup.gd")
+    assert "bots" in _read("src/core/PerformanceMonitor.gd")
+
 def test_no_secrets_committed():
     # NOTE: pattern uses dashed key header to avoid self-matching this file.
     pat = re.compile(r"ghp_[A-Za-z0-9]{10,}|BEGIN " + "PRIVATE KEY-----")

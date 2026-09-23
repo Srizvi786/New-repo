@@ -26,6 +26,7 @@ const LOOT_SCRIPT := "res://src/items/LootManager.gd"
 const BOTMGR_SCRIPT := "res://src/bots/BotManager.gd"
 const MATCH_SCRIPT := "res://src/match/MatchManager.gd"
 const ZONE_SCRIPT := "res://src/match/ZoneManager.gd"
+const TFX := preload("res://src/weapons/TracerFX.gd")
 const RESULTS_SCENE := "res://src/ui/Results.tscn"
 
 func _ready() -> void:
@@ -70,6 +71,7 @@ func _deploy() -> void:
 	if hud:
 		hud.queue_free()
 		hud = null
+	TFX.clear_pool()
 	var gm := get_node("/root/GameManager")
 	await gm.call("start_play", world_root)
 	_ensure_loot()

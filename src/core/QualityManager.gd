@@ -6,6 +6,14 @@ enum Preset { LOW, MEDIUM, HIGH }
 
 var current: int = Preset.MEDIUM
 var applied_scale: float = 0.85
+var dynamic_res: bool = true
+
+const DYN_LEVELS := [0.6, 0.7, 0.85, 1.0]
+var _dyn_idx: int = 2
+var _fps_acc: float = 0.0
+var _fps_n: int = 0
+var _fps_low_t: float = 0.0
+var _fps_high_t: float = 0.0
 
 signal preset_applied(preset: int)
 
@@ -44,24 +52,50 @@ func auto_detect() -> int:
 
 func apply_preset(p: int) -> void:
 	current = p
-	var vp := get_viewport()
 	match p:
 		Preset.LOW:
-			applied_scale = 0.7
-			if vp:
-				vp.scaling_3d_scale = 0.7
-				vp.msaa_3d = Viewport.MSAA_DISABLED
+			_dyn_idx = 1
 		Preset.MEDIUM:
-			applied_scale = 0.85
-			if vp:
-				vp.scaling_3d_scale = 0.85
-				vp.msaa_3d = Viewport.MSAA_2X
+			_dyn_idx = 2
 		Preset.HIGH:
-			applied_scale = 1.0
-			if vp:
-				vp.scaling_3d_scale = 1.0
-				vp.msaa_3d = Viewport.MSAA_2X
+			_dyn_idx = 3
+	_apply_dyn()
 	emit_signal("preset_applied", current)
+
+func _apply_dyn() -> void:
+	applied_scale = DYN_LEVELS[_dyn_idx]
+	var vp := get_viewport()
+	if vp:
+		vp.scaling_3d_scale = applied_scale
+		vp.msaa_3d = Viewport.MSAA_DISABLED if current == Preset.LOW else Viewport.MSAA_2X
+
+func _process(_delta: float) -> void:
+	if not dynamic_res:
+		return
+	_fps_acc += Performance.get_monitor(Performance.TIME_FPS)
+	_fps_n += 1
+	if _fps_n < 60:
+		return
+	var avg: float = _fps_acc / 60.0
+	_fps_acc = 0.0
+	_fps_n = 0
+	if avg < 25.0:
+		_fps_low_t += 1.0
+		_fps_high_t = 0.0
+	elif avg > 55.0:
+		_fps_high_t += 1.0
+		_fps_low_t = 0.0
+	else:
+		_fps_low_t = 0.0
+		_fps_high_t = 0.0
+	if _fps_low_t >= 3.0 and _dyn_idx > 0:
+		_dyn_idx -= 1
+		_fps_low_t = 0.0
+		_apply_dyn()
+	elif _fps_high_t >= 5.0 and _dyn_idx < DYN_LEVELS.size() - 1:
+		_dyn_idx += 1
+		_fps_high_t = 0.0
+		_apply_dyn()
 
 func apply_to_camera(cam: Camera3D) -> void:
 	if cam == null:

@@ -26,6 +26,18 @@ Auto-detect: `OS.get_model_name()` + `OS.get_processor_count()` + `OS.get_memory
 
 F3 toggles (or 3-finger tap 0.5s): FPS, frame ms avg, mem MB, draw calls (`RenderingServer.get_render_info`), physics ms, objects, player count, ping stub.
 
+## M10 measures (implemented)
+
+- **Dynamic resolution**: per-60-frame FPS average; <25 fps for 3 windows steps
+  render scale down (1.0→0.85→0.7→0.6), >55 fps for 5 windows steps up.
+  Toggle: `QualityManager.dynamic_res`.
+- **Tracer pool**: bot/event tracers reuse 32 pooled nodes (`TracerFX`), cleared
+  per match; player gun keeps its own capped pool (24).
+- **Loot culling**: pickups skip idle animation beyond 40 m (0.5 s recheck).
+- **Shared materials**: map reuses ~13 materials; vegetation is 4 MultiMesh draws.
+- **Bots**: staggered 0.25 s thinking, ≤11, corpses freed after 20 s.
+- **Character LOD**: 0 (<25 m), 1 (<60 m), 2 (capsule); LOW preset forces ≥1 past 15 m.
+
 ## Profiling
 
 - `godot --headless` cannot profile GPU; use `adb logcat | grep Godot` + in-game panel on device.
