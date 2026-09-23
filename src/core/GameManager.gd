@@ -5,7 +5,8 @@ extends Node
 enum State { BOOT, MENU, LOADING, PLAYING, RESULTS }
 
 var state: int = State.BOOT
-var arena_path: String = "res://src/environment/TestArena.tscn"
+var arena_path: String = "res://src/environment/BattleMap.tscn"
+var skirmish_path: String = "res://src/environment/TestArena.tscn" # dev quick-test scene
 var last_result: Dictionary = {}
 
 signal state_changed(new_state: int)

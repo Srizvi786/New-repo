@@ -33,6 +33,8 @@ REQUIRED = [
     "src/weapons/WeaponView.gd",
     "src/environment/TestArena.tscn",
     "src/environment/TestArena.gd",
+    "src/environment/BattleMap.tscn",
+    "src/environment/BattleMap.gd",
     "src/ui/MainMenu.tscn",
     "src/ui/MainMenu.gd",
     "src/ui/HUD.tscn",

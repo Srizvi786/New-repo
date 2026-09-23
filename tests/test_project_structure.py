@@ -98,6 +98,13 @@ def test_loot_m5():
     assert "InvPanel" in _read("src/ui/HUD.tscn")
     assert "use_item" in _read("src/player/Player.gd")
 
+def test_battlemap_m6():
+    b = _read("src/environment/BattleMap.gd")
+    for f in ["get_loot_points", "get_spawn_points", "get_map_bounds", "MultiMesh",
+              "Town", "Industrial", "Compound", "loot_points", "spawn_points"]:
+        assert f in b, f"BattleMap.gd missing {f}"
+    assert "BattleMap.tscn" in _read("src/core/GameManager.gd")
+
 def test_no_secrets_committed():
     # NOTE: pattern uses dashed key header to avoid self-matching this file.
     pat = re.compile(r"ghp_[A-Za-z0-9]{10,}|BEGIN " + "PRIVATE KEY-----")
