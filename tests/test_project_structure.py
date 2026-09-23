@@ -105,6 +105,15 @@ def test_battlemap_m6():
         assert f in b, f"BattleMap.gd missing {f}"
     assert "BattleMap.tscn" in _read("src/core/GameManager.gd")
 
+def test_bots_m7():
+    b = _read("src/bots/Bot.gd")
+    for f in ["take_damage", "is_head_hit", "LOOT", "ENGAGE", "ZONE", "think",
+              "burst", "reaction", "drop_loot", "TracerFX"]:
+        assert f in b, f"Bot.gd missing {f}"
+    bm = _read("src/bots/BotManager.gd")
+    assert "spawn_bots" in bm and "active_bots" in bm
+    assert "nearest_unclaimed" in _read("src/items/LootManager.gd")
+
 def test_no_secrets_committed():
     # NOTE: pattern uses dashed key header to avoid self-matching this file.
     pat = re.compile(r"ghp_[A-Za-z0-9]{10,}|BEGIN " + "PRIVATE KEY-----")

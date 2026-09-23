@@ -10,6 +10,7 @@ const AMMO_CAPS := {"light": 180, "medium": 180, "shells": 32, "heavy": 25}
 const PICKUP_RADIUS := 2.6
 
 var pickups: Array = []
+var claims: Dictionary = {} # bot instance id -> pickup (spread bots across loot)
 
 func _ready() -> void:
 	add_to_group("loot_manager")
@@ -58,16 +59,31 @@ func spawn_loot(points: Array, count: int = 36, seed: int = 777) -> void:
 		pickups.append(pk)
 
 func nearest(pos: Vector3, max_d: float = PICKUP_RADIUS):
+	return nearest_unclaimed(pos, max_d, null)
+
+func nearest_unclaimed(pos: Vector3, max_d: float, claimant):
+	var claimed_by_others: Dictionary = {}
+	for k in claims:
+		if k != (claimant.get_instance_id() if claimant else -1):
+			claimed_by_others[(claims[k] as Object).get_instance_id()] = true
 	var best = null
 	var best_d := max_d
 	for p in pickups:
 		if not is_instance_valid(p):
 			continue
+		if (p as Object).get_instance_id() in claimed_by_others:
+			continue
 		var d: float = pos.distance_to((p as Node3D).position)
 		if d < best_d:
 			best_d = d
 			best = p
+	if best and claimant:
+		claims[claimant.get_instance_id()] = best
 	return best
+
+func release_claim(claimant) -> void:
+	if claimant:
+		claims.erase(claimant.get_instance_id())
 
 func drop_at(res, pos: Vector3) -> void:
 	var pk = PickupScript.new()
@@ -111,8 +127,30 @@ func apply_pickup(pk, player, weapon_view) -> String:
 		else:
 			msg = "No weapon for attachment"
 	pickups.erase(pk)
+	for k in claims.keys():
+		if not is_instance_valid(claims[k]) or claims[k] == pk:
+			claims.erase(k)
 	pk.queue_free()
 	return msg
+
+func apply_bot_pickup(pk, bot) -> void:
+	# Bots keep it simple: ammo refills mag, armor adds 25, sometimes swaps gun.
+	if not is_instance_valid(pk) or bot == null:
+		return
+	var res = pk.get("item")
+	if res == null:
+		return
+	var kind := str(res.get("kind"))
+	if kind == "ammo" and str(res.get("caliber")) == str(bot.get("weapon").get("caliber")):
+		bot.set("mag", int(bot.get("weapon").get("eff_mag")))
+	elif kind == "armor":
+		bot.get("health_node").call("add_armor", 25.0)
+	elif kind == "weapon" and randf() < 0.4:
+		bot.set("weapon", WDB.by_id(str(res.get("weapon_id"))))
+		bot.set("mag", int(bot.get("weapon").get("eff_mag")))
+	release_claim(bot)
+	pickups.erase(pk)
+	pk.queue_free()
 
 func _weapon_item_for(wres):
 	# Map a dropped weapon back to its loot item.

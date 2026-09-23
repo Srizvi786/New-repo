@@ -17,8 +17,10 @@ var touch: Control = null
 var player: CharacterBody3D = null
 var weapon: Node3D = null
 var loot_mgr: Node = null
+var bot_mgr: Node = null
 
 const LOOT_SCRIPT := "res://src/items/LootManager.gd"
+const BOTMGR_SCRIPT := "res://src/bots/BotManager.gd"
 
 func _ready() -> void:
 	# Runtime helpers (kept out of the .tscn so Main.tscn stays trivial/robust).
@@ -56,6 +58,18 @@ func _on_play() -> void:
 	await gm.call("start_play", world_root)
 	_ensure_loot()
 	_spawn_player()
+	_ensure_bots()
+
+func _ensure_bots() -> void:
+	if bot_mgr == null:
+		var bs: Script = load(BOTMGR_SCRIPT)
+		bot_mgr = Node.new()
+		bot_mgr.set_script(bs)
+		bot_mgr.name = "BotManager"
+		add_child(bot_mgr)
+		await get_tree().process_frame
+	var arena := world_root.get_child(world_root.get_child_count() - 1)
+	bot_mgr.call("spawn_bots", arena, 11)
 
 func _ensure_loot() -> void:
 	if loot_mgr == null:
@@ -80,6 +94,7 @@ func _on_player_died(_attacker: String) -> void:
 	var gm := get_node("/root/GameManager")
 	await gm.call("start_play", world_root)
 	_spawn_player()
+	_ensure_bots()
 
 func _clear_world() -> void:
 	for c in world_root.get_children():
