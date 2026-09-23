@@ -114,6 +114,16 @@ def test_bots_m7():
     assert "spawn_bots" in bm and "active_bots" in bm
     assert "nearest_unclaimed" in _read("src/items/LootManager.gd")
 
+def test_match_m8():
+    m = _read("src/match/MatchManager.gd")
+    for f in ["start_match", "alive_count", "match_ended", "killfeed", "placement", "player_kills"]:
+        assert f in m, f"MatchManager missing {f}"
+    assert "show_result" in _read("src/ui/Results.gd")
+    assert "Results.tscn" in _read("main/Main.gd")
+    h = _read("src/ui/HUD.gd")
+    assert "bind_match" in h and "push_kill" in h
+    assert "AliveLabel" in _read("src/ui/HUD.tscn")
+
 def test_no_secrets_committed():
     # NOTE: pattern uses dashed key header to avoid self-matching this file.
     pat = re.compile(r"ghp_[A-Za-z0-9]{10,}|BEGIN " + "PRIVATE KEY-----")

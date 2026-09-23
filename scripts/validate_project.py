@@ -45,6 +45,8 @@ REQUIRED = [
     "src/ui/MainMenu.gd",
     "src/ui/HUD.tscn",
     "src/ui/HUD.gd",
+    "src/ui/Results.tscn",
+    "src/ui/Results.gd",
     "src/audio/AudioManager.gd",
     "docs/architecture.md",
     "docs/android-build.md",

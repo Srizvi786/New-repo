@@ -9,6 +9,11 @@ extends Control
 @onready var _cross: CenterContainer = $Crosshair
 @onready var _hitmark: Label = $Crosshair/Hitmark
 @onready var _prompt: Label = $InteractPrompt
+@onready var _alive: Label = $TopCenter/AliveLabel
+@onready var _timer: Label = $TopCenter/TimerLabel
+@onready var _feed: VBoxContainer = $TopCenter/FeedBox
+
+var match_mgr: Node = null
 @onready var _panel: PanelContainer = $InvPanel
 @onready var _cap: Label = $InvPanel/Margin/InvBox/CapLabel
 @onready var _items_box: VBoxContainer = $InvPanel/Margin/InvBox/ItemsBox
@@ -36,6 +41,24 @@ func bind(p: Node, w: Node) -> void:
 		var inv = player.get("inventory")
 		if inv.has_signal("changed") and not inv.is_connected("changed", _rebuild_list):
 			inv.connect("changed", _rebuild_list)
+
+func bind_match(m: Node) -> void:
+	match_mgr = m
+	if match_mgr and match_mgr.has_signal("killfeed"):
+		if not match_mgr.is_connected("killfeed", push_kill):
+			match_mgr.connect("killfeed", push_kill)
+
+func push_kill(msg: String) -> void:
+	var lab := Label.new()
+	lab.text = msg
+	lab.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lab.add_theme_font_size_override("font_size", 14)
+	_feed.add_child(lab)
+	while _feed.get_child_count() > 4:
+		_feed.get_child(0).queue_free()
+	await get_tree().create_timer(6.0).timeout
+	if is_instance_valid(lab):
+		lab.queue_free()
 
 func set_prompt(t: String) -> void:
 	if _msg_t <= 0.0:
@@ -75,6 +98,9 @@ func _process(_delta: float) -> void:
 		_hp.value = float(player.get("health"))
 	if player and "armor" in player:
 		_armor.value = float(player.get("armor"))
+	if match_mgr:
+		_alive.text = "ALIVE %d" % int(match_mgr.call("alive_count"))
+		_timer.text = str(match_mgr.call("time_str"))
 	if player and "anim_state" in player:
 		var st := str(player.get("anim"))
 		_state.text = "M1  •  %s  •  OFFLINE" % str(player.get("anim_state"))

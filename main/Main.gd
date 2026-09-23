@@ -18,9 +18,13 @@ var player: CharacterBody3D = null
 var weapon: Node3D = null
 var loot_mgr: Node = null
 var bot_mgr: Node = null
+var match_mgr: Node = null
+var results: Control = null
 
 const LOOT_SCRIPT := "res://src/items/LootManager.gd"
 const BOTMGR_SCRIPT := "res://src/bots/BotManager.gd"
+const MATCH_SCRIPT := "res://src/match/MatchManager.gd"
+const RESULTS_SCENE := "res://src/ui/Results.tscn"
 
 func _ready() -> void:
 	# Runtime helpers (kept out of the .tscn so Main.tscn stays trivial/robust).
@@ -53,12 +57,23 @@ func _on_play() -> void:
 	if menu:
 		menu.queue_free()
 		menu = null
+	if results:
+		results.queue_free()
+		results = null
 	await get_tree().process_frame
+	await _deploy()
+
+func _deploy() -> void:
+	# Full match deploy: arena -> loot -> player -> bots -> match wiring.
+	if hud:
+		hud.queue_free()
+		hud = null
 	var gm := get_node("/root/GameManager")
 	await gm.call("start_play", world_root)
 	_ensure_loot()
 	_spawn_player()
 	_ensure_bots()
+	_start_match()
 
 func _ensure_bots() -> void:
 	if bot_mgr == null:
@@ -83,18 +98,51 @@ func _ensure_loot() -> void:
 	if arena and arena.has_method("get_loot_points"):
 		loot_mgr.call("spawn_loot", arena.call("get_loot_points"))
 
-func _on_player_died(_attacker: String) -> void:
-	# M4 test loop: redeploy after 3s. M8 replaces this with the results screen.
-	await get_tree().create_timer(3.0).timeout
+func _start_match() -> void:
+	if match_mgr == null:
+		var ms: Script = load(MATCH_SCRIPT)
+		match_mgr = Node.new()
+		match_mgr.set_script(ms)
+		match_mgr.name = "MatchManager"
+		add_child(match_mgr)
+		match_mgr.connect("match_ended", _on_match_ended)
+	match_mgr.call("start_match", player, bot_mgr.get("bots"))
 	if hud:
-		hud.queue_free()
-		hud = null
-	if touch:
-		pass # reused across respawns
+		hud.call("bind_match", match_mgr)
+
+func _on_match_ended(result: Dictionary) -> void:
+	# Freeze the battlefield behind the results screen.
+	if player:
+		player.set_physics_process(false)
+	if bot_mgr:
+		for b in bot_mgr.get("bots"):
+			if is_instance_valid(b):
+				b.set_physics_process(false)
+	var packed: PackedScene = load(RESULTS_SCENE)
+	results = packed.instantiate() as Control
+	ui_root.add_child(results)
+	results.call("show_result", result)
+	results.connect("replay_requested", _on_replay)
+	results.connect("menu_requested", _to_menu)
+
+func _on_replay() -> void:
+	if results:
+		results.queue_free()
+		results = null
+	await get_tree().process_frame
+	await _deploy()
+
+func _to_menu() -> void:
+	if results:
+		results.queue_free()
+		results = null
+	if bot_mgr:
+		bot_mgr.call("clear")
+	if loot_mgr:
+		loot_mgr.call("clear")
 	var gm := get_node("/root/GameManager")
-	await gm.call("start_play", world_root)
-	_spawn_player()
-	_ensure_bots()
+	gm.call("goto_menu")
+	_show_menu()
 
 func _clear_world() -> void:
 	for c in world_root.get_children():
@@ -122,8 +170,7 @@ func _spawn_player() -> void:
 	var cam := rig.call("get_camera") as Camera3D
 	weapon.call("setup", cam, player)
 	player.call("bind", input_mgr, weapon)
-	if player.has_signal("died"):
-		player.connect("died", _on_player_died)
+	# Deaths are owned by MatchManager (M8); no direct connect here.
 	# HUD (rebuilt per life; touch controls persist across respawns).
 	var hpacked: PackedScene = load(HUD_SCENE)
 	hud = hpacked.instantiate() as Control
