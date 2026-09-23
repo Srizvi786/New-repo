@@ -1,5 +1,8 @@
 # Dustline Strike
 
+[![validation](https://github.com/Srizvi786/New-repo/actions/workflows/validation.yml/badge.svg)](https://github.com/Srizvi786/New-repo/actions/workflows/validation.yml)
+[![android-build](https://github.com/Srizvi786/New-repo/actions/workflows/android-build.yml/badge.svg)](https://github.com/Srizvi786/New-repo/actions/workflows/android-build.yml)
+
 **Dustline Strike** is an ORIGINAL realistic 3D battle-royale-style shooter for Android, built with **Godot 4.7 (GL Compatibility)**.
 
 No PUBG / Free Fire / Fortnite / Call of Duty characters, maps, UI, sounds, logos, assets, or code are used. All art in this repo is procedural placeholder or original, designed to be replaced by licensed/original PBR assets via the pipeline in `docs/asset-pipeline.md`.

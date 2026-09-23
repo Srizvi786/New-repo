@@ -47,8 +47,19 @@ jobs:
           /tmp/godot/Godot_v4.7.2-stable_linux.x86_64 --headless --path . --export-debug "Android" build/dustline-debug.apk
           ls -lh build/
 
+      - name: Export debug AAB (Play-store format, debug-signed)
+        run: |
+          /tmp/godot/Godot_v4.7.2-stable_linux.x86_64 --headless --path . --export-debug "Android-AAB" build/dustline-debug.aab
+          ls -lh build/
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: dustline-debug-apk
           path: build/dustline-debug.apk
+
+      - name: Upload AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: dustline-debug-aab
+          path: build/dustline-debug.aab
