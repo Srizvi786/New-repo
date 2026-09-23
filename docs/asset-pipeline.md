@@ -2,9 +2,14 @@
 
 Goal: zero manual copy/paste, no copied IP, honest placeholders.
 
-## Current state (M1)
+## Current state (M2)
 
-All meshes/materials are **procedural** (`StandardMaterial3D`, PBR params in code). No external FBX/PNG. Replacement-ready.
+Placeholder soldier is now an **articulated procedural rig** (`src/player/CharacterRig.gd`):
+joints for hips/torso/head/arms/legs, 15-state pose system, LOD0/1/2, markers
+(Head/Weapon/Back/Sidearm/Hands), hit-flash + death + reload/shoot overrides.
+`Player` owns physics only; all visuals go through the rig interface, so a real
+`.glb` swaps in without touching gameplay code. Swap contract + validator:
+`tools/import_character.py assets/soldier.glb [--apply]`.
 
 ## Required assets (realistic pass, M2/M3/M6)
 

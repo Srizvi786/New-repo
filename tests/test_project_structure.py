@@ -39,6 +39,20 @@ def test_player_has_core_mechanics():
     for kw in ["CharacterBody3D", "sprint", "crouch", "gravity", "jump", "get_state_dict"]:
         assert kw in txt, f"Player.gd missing {kw}"
 
+def test_character_rig_m2():
+    txt = _read("src/player/CharacterRig.gd")
+    for m in ["set_state", "play_shoot", "play_reload", "play_hit",
+              "play_death", "play_land", "set_lod", "get_weapon_mount"]:
+        assert m in txt, f"CharacterRig.gd missing {m}"
+    for marker in ["HeadMarker", "WeaponMount", "BackMount", "SidearmMount"]:
+        assert marker in txt, f"CharacterRig.gd missing marker {marker}"
+    for anim in ["crouch_walk", "sprint", "jump", "fall", "aim"]:
+        assert anim in txt, f"CharacterRig.gd missing anim {anim}"
+    ptxt = _read("src/player/Player.gd")
+    assert "character_rig" in ptxt, "Player must delegate visuals to CharacterRig"
+    assert "_build_placeholder_soldier" not in ptxt, "old inline soldier builder must be gone"
+    assert os.path.isfile(os.path.join(ROOT, "tools/import_character.py"))
+
 def test_touch_controls_mobile_ready():
     txt = _read("src/input/TouchControls.gd")
     for kw in ["joystick", "fire", "aim", "sensitivity"]:

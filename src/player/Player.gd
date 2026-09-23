@@ -4,6 +4,8 @@ extends CharacterBody3D
 ## Placeholder soldier meshes are procedural PBR; real rig swaps in via MeshRoot (M2).
 class_name Player
 
+const CRig := preload("res://src/player/CharacterRig.gd")
+
 signal fired
 signal jumped
 signal landed
@@ -31,9 +33,7 @@ var on_ground_last: bool = true
 var anim_state: String = "idle" # idle|walk|run|sprint|jump|fall|crouch|crouch_walk|aim
 var health: float = 100.0 # stub; full combat in M4
 
-var _mesh_root: Node3D
-var _body_parts: Array[MeshInstance3D] = []
-var _bob_t: float = 0.0
+var character_rig: CRig = null
 var _stand_height: float = 1.8
 var _crouch_height: float = 1.2
 
@@ -42,7 +42,12 @@ var _crouch_height: float = 1.2
 func _ready() -> void:
 	add_to_group("player")
 	rig = $CameraRig
-	_build_placeholder_soldier()
+	character_rig = CRig.new()
+	character_rig.name = "CharacterRig"
+	add_child(character_rig)
+	fired.connect(character_rig.play_shoot)
+	jumped.connect(character_rig.play_jump)
+	landed.connect(character_rig.play_land)
 	_apply_stance(false)
 	# Desktop mouse capture (touch devices skip this).
 	if not DisplayServer.is_touchscreen_available():
@@ -134,11 +139,11 @@ func _physics_process(delta: float) -> void:
 	if is_on_floor() and not on_ground_last and velocity.y <= 0.5:
 		emit_signal("landed")
 	on_ground_last = is_on_floor()
-	_update_anim_state(iv)
+	var firing := Input.is_action_pressed("fire") or (input_mgr and bool(input_mgr.get("touch_fire_held")))
+	_update_anim_state(iv, firing)
 	if rig and rig.has_method("set_aiming"):
 		rig.call("set_aiming", aiming)
 	# placeholder fire -> weapon view (full ballistics M3)
-	var firing := Input.is_action_pressed("fire") or (input_mgr and bool(input_mgr.get("touch_fire_held")))
 	if firing and weapon_view and weapon_view.has_method("try_fire"):
 		if weapon_view.call("try_fire", aiming):
 			emit_signal("fired")
@@ -162,8 +167,8 @@ func _apply_stance(c: bool) -> void:
 		cap.height = _crouch_height if c else _stand_height
 		_col.position.y = (_crouch_height * 0.5) if c else (_stand_height * 0.5)
 
-func _update_anim_state(iv: Vector2) -> void:
-	# Hook-compatible state string for the M2 AnimationTree swap.
+func _update_anim_state(_iv: Vector2, firing: bool) -> void:
+	# Hook-compatible state string for the M2 CharacterRig (real .glb swaps in later).
 	var speed := Vector2(velocity.x, velocity.z).length()
 	if not is_on_floor():
 		anim_state = "jump" if velocity.y > 0.5 else "fall"
@@ -179,28 +184,25 @@ func _update_anim_state(iv: Vector2) -> void:
 		anim_state = "walk"
 	else:
 		anim_state = "idle"
-	# Cheap procedural motion: bob + lean (replaced by real anims in M2).
-	_bob_t += delta_speed_factor(speed) * get_physics_process_delta_time()
-	if _mesh_root:
-		_mesh_root.position.y = absf(sin(_bob_t * 9.0)) * 0.035 * minf(1.0, speed / 6.0)
-		_mesh_root.rotation.z = lerpf(_mesh_root.rotation.z, -iv.x * 0.06, 0.12)
-		_mesh_root.rotation.x = lerpf(_mesh_root.rotation.x, -maxf(0.0, -iv.y) * 0.04 if not sprinting else -0.08, 0.1)
+	if character_rig:
+		character_rig.set_state(anim_state, speed, firing, aiming)
 
-func delta_speed_factor(speed: float) -> float:
-	return clampf(speed, 0.0, 8.0)
-
-# --- M2 animation hook stubs (real rig connects these) ---
+# --- M2 animation hooks (CharacterRig implements these; real rig keeps the names) ---
 func play_shoot() -> void:
-	pass
+	if character_rig:
+		character_rig.play_shoot()
 
 func play_reload() -> void:
-	pass
+	if character_rig and weapon_view:
+		character_rig.play_reload(float(weapon_view.get("weapon").get("reload_time")) if weapon_view.get("weapon") else 2.0)
 
 func play_hit() -> void:
-	pass
+	if character_rig:
+		character_rig.play_hit()
 
 func play_death() -> void:
-	pass
+	if character_rig:
+		character_rig.play_death()
 
 # --- network-ready state (M11) ---
 func get_state_dict() -> Dictionary:
@@ -226,66 +228,3 @@ func apply_state_dict(s: Dictionary) -> void:
 		_apply_stance(bool(s["crouch"]))
 	if s.has("health"):
 		health = float(s["health"])
-
-# --- placeholder soldier (procedural PBR, honest stand-in) ---
-func _pbr(albedo: Color, rough: float = 0.82, metal: float = 0.08) -> StandardMaterial3D:
-	var m := StandardMaterial3D.new()
-	m.albedo_color = albedo
-	m.roughness = rough
-	m.metallic = metal
-	return m
-
-func _box(parent: Node3D, pos: Vector3, size: Vector3, mat: Material) -> MeshInstance3D:
-	var mi := MeshInstance3D.new()
-	var bm := BoxMesh.new()
-	bm.size = size
-	bm.material = mat
-	mi.mesh = bm
-	mi.position = pos
-	parent.add_child(mi)
-	_body_parts.append(mi)
-	return mi
-
-func _capsule(parent: Node3D, pos: Vector3, r: float, h: float, mat: Material) -> MeshInstance3D:
-	var mi := MeshInstance3D.new()
-	var cm := CapsuleMesh.new()
-	cm.radius = r
-	cm.height = h
-	cm.material = mat
-	mi.mesh = cm
-	mi.position = pos
-	parent.add_child(mi)
-	_body_parts.append(mi)
-	return mi
-
-func _build_placeholder_soldier() -> void:
-	_mesh_root = Node3D.new()
-	_mesh_root.name = "MeshRoot"
-	add_child(_mesh_root)
-	var uniform := _pbr(Color(0.32, 0.33, 0.26))      # olive drab
-	var vest_m := _pbr(Color(0.23, 0.22, 0.18), 0.9)   # tactical vest
-	var skin := _pbr(Color(0.55, 0.42, 0.33), 0.65)    # exposed skin placeholder
-	var helmet_m := _pbr(Color(0.25, 0.26, 0.22), 0.7, 0.25)
-	var pack_m := _pbr(Color(0.28, 0.27, 0.2), 0.9)
-	var gun_m := _pbr(Color(0.12, 0.12, 0.13), 0.45, 0.75)
-	# legs / torso / arms (human proportions, ~1.8m)
-	_box(_mesh_root, Vector3(-0.13, 0.45, 0), Vector3(0.2, 0.9, 0.24), uniform) # leg L
-	_box(_mesh_root, Vector3(0.13, 0.45, 0), Vector3(0.2, 0.9, 0.24), uniform)  # leg R
-	_box(_mesh_root, Vector3(0, 1.12, 0), Vector3(0.52, 0.62, 0.32), uniform)   # torso
-	_box(_mesh_root, Vector3(0, 1.14, -0.2), Vector3(0.4, 0.5, 0.16), pack_m)   # backpack
-	_box(_mesh_root, Vector3(0, 1.16, 0.1), Vector3(0.44, 0.4, 0.36), vest_m)   # vest
-	_box(_mesh_root, Vector3(-0.36, 1.12, 0.05), Vector3(0.16, 0.55, 0.2), uniform) # arm L
-	_box(_mesh_root, Vector3(0.36, 1.12, 0.05), Vector3(0.16, 0.55, 0.2), uniform)  # arm R
-	_capsule(_mesh_root, Vector3(0, 1.58, 0), 0.14, 0.3, skin)                  # head
-	_capsule(_mesh_root, Vector3(0, 1.68, -0.02), 0.17, 0.22, helmet_m)         # helmet
-	# weapon placeholder in hands (swapped by WeaponView world model in M3)
-	_box(_mesh_root, Vector3(0.22, 1.15, 0.45), Vector3(0.09, 0.12, 0.85), gun_m)
-	# attachment markers for M2/M3 real assets
-	var head := Marker3D.new()
-	head.name = "HeadMarker"
-	head.position = Vector3(0, 1.7, 0)
-	_mesh_root.add_child(head)
-	var mount := Marker3D.new()
-	mount.name = "WeaponMount"
-	mount.position = Vector3(0.22, 1.15, 0.45)
-	_mesh_root.add_child(mount)

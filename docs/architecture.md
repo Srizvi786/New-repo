@@ -24,7 +24,8 @@ Main (main/Main.tscn, Main.gd)
 - `QualityManager` (autoload): LOW/MEDIUM/HIGH + auto-detect (OS model, RAM, cores, GLES3). Applies render scale, shadows, MSAA, fog density, view distance.
 - `PerformanceMonitor` (autoload-ish Node, dev-only UI): FPS, frame ms, mem, draw calls, physics, object count.
 - `InputManager` (autoload? No — Node in Main for M1, promoted later): owns InputMap actions, touch look vector, gyro stub, aim-assist stub.
-- `Player` (CharacterBody3D): movement physics, crouch/capsule resize, camera rig ref, weapon view ref, health stub hook (full combat in M4).
+- `Player` (CharacterBody3D): movement physics, crouch/capsule resize, camera rig ref, weapon view ref, health stub hook (full combat in M4). Owns NO meshes — visuals delegated to `CharacterRig`.
+- `CharacterRig` (M2, `src/player/CharacterRig.gd`): articulated placeholder soldier, `set_state()` + `play_shoot/reload/hit/death/land/jump/switch` API, LOD0/1/2 with distance + quality scaling, attachment markers (Head/Weapon/Back/Sidearm). Real `.glb` implements the same API via `tools/import_character.py`.
 - `CameraRig` (Node3D + SpringArm3D + Camera3D): third-person orbit + collision + recoil kick + first-person toggle (architecture ready, TP default for mobile).
 - `TouchControls` + `VirtualJoystick`: left joystick, right look area, Fire/Aim/Jump/Crouch/Sprint/Reload buttons. Anchors + containers, no fixed coords. Customizable pos/size/sensitivity persisted.
 - `WeaponResource` (Resource): damage, fire_rate, mag, reload, recoil, spread, range, headshot mult, auto. `WeaponDatabase`: 5 data rows (AR/SMG/Shotgun/Sniper/Pistol). `WeaponView`: hitscan placeholder + tracer + muzzle flash + recoil hooks (full system M3).

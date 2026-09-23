@@ -8,7 +8,8 @@ No PUBG / Free Fire / Fortnite / Call of Duty characters, maps, UI, sounds, logo
 
 - Milestone 0 — repo + architecture: DONE
 - Milestone 1 — player + camera + Android touch + test arena: DONE
-- Milestones 2–13: planned (see `docs/architecture.md`)
+- Milestone 2 — character rig pipeline (articulated placeholder, LOD, swap tool): DONE
+- Milestones 3–13: planned (see `docs/architecture.md`)
 
 ## Quick start (desktop check)
 
@@ -60,7 +61,11 @@ See `docs/android-build.md`. CI (`android-build.yml`) builds a debug APK/AAB wit
 
 ## Asset honesty
 
-Milestone 1 uses a **procedural placeholder soldier** (capsule-based, PBR tactical colors, attachment markers, animation-hook stubs). It is NOT claimed to be a final realistic character. Realistic human + weapons require either an artist or an AI 3D service — see `docs/asset-pipeline.md` for the exact spec + import settings. No fake APIs are wired.
+Milestone 1 uses a **procedural placeholder soldier**, upgraded in M2 to an articulated
+rig (`CharacterRig`: joints, 15-state poses, LOD0/1/2, attachment markers). It is NOT
+claimed to be a final realistic character. Realistic human + weapons require either
+an artist or an AI 3D service — see `docs/asset-pipeline.md` + `tools/import_character.py`
+for the exact swap contract. No fake APIs are wired.
 
 ## License
 
