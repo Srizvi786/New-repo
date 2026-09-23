@@ -124,6 +124,13 @@ def test_match_m8():
     assert "bind_match" in h and "push_kill" in h
     assert "AliveLabel" in _read("src/ui/HUD.tscn")
 
+def test_zone_m9():
+    z = _read("src/match/ZoneManager.gd")
+    for f in ["is_inside", "get_center", "reset_match", "status_str", "PHASES", "dps"]:
+        assert f in z, f"ZoneManager missing {f}"
+    assert "ZoneLabel" in _read("src/ui/HUD.tscn")
+    assert "ZONE_SCRIPT" in _read("main/Main.gd")
+
 def test_no_secrets_committed():
     # NOTE: pattern uses dashed key header to avoid self-matching this file.
     pat = re.compile(r"ghp_[A-Za-z0-9]{10,}|BEGIN " + "PRIVATE KEY-----")

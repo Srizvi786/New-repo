@@ -11,6 +11,7 @@ extends Control
 @onready var _prompt: Label = $InteractPrompt
 @onready var _alive: Label = $TopCenter/AliveLabel
 @onready var _timer: Label = $TopCenter/TimerLabel
+@onready var _zone: Label = $TopCenter/ZoneLabel
 @onready var _feed: VBoxContainer = $TopCenter/FeedBox
 
 var match_mgr: Node = null
@@ -101,6 +102,11 @@ func _process(_delta: float) -> void:
 	if match_mgr:
 		_alive.text = "ALIVE %d" % int(match_mgr.call("alive_count"))
 		_timer.text = str(match_mgr.call("time_str"))
+	var zone = get_tree().get_first_node_in_group("zone_manager")
+	if zone and player:
+		_zone.text = str(zone.call("status_str", (player as Node3D).position))
+	else:
+		_zone.text = ""
 	if player and "anim_state" in player:
 		var st := str(player.get("anim"))
 		_state.text = "M1  •  %s  •  OFFLINE" % str(player.get("anim_state"))

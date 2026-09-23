@@ -19,11 +19,13 @@ var weapon: Node3D = null
 var loot_mgr: Node = null
 var bot_mgr: Node = null
 var match_mgr: Node = null
+var zone_mgr: Node = null
 var results: Control = null
 
 const LOOT_SCRIPT := "res://src/items/LootManager.gd"
 const BOTMGR_SCRIPT := "res://src/bots/BotManager.gd"
 const MATCH_SCRIPT := "res://src/match/MatchManager.gd"
+const ZONE_SCRIPT := "res://src/match/ZoneManager.gd"
 const RESULTS_SCENE := "res://src/ui/Results.tscn"
 
 func _ready() -> void:
@@ -73,7 +75,22 @@ func _deploy() -> void:
 	_ensure_loot()
 	_spawn_player()
 	_ensure_bots()
+	_ensure_zone()
 	_start_match()
+
+func _ensure_zone() -> void:
+	if zone_mgr == null:
+		var zs: Script = load(ZONE_SCRIPT)
+		zone_mgr = Node3D.new()
+		zone_mgr.set_script(zs)
+		zone_mgr.name = "ZoneManager"
+		add_child(zone_mgr)
+		await get_tree().process_frame
+	var arena := world_root.get_child(world_root.get_child_count() - 1)
+	if arena and arena.has_method("get_map_bounds"):
+		zone_mgr.call("reset_match", arena.call("get_map_bounds"))
+	elif arena:
+		zone_mgr.call("reset_match", Rect2(-60, -60, 120, 120))
 
 func _ensure_bots() -> void:
 	if bot_mgr == null:
