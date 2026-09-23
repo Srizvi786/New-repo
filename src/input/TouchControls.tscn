@@ -1,0 +1,129 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/input/TouchControls.gd" id="1_tc"]
+[ext_resource type="Script" path="res://src/input/VirtualJoystick.gd" id="2_joy"]
+
+[node name="TouchControls" type="Control"]
+layout_mode=3
+anchors_preset=15
+anchor_right=1.0
+anchor_bottom=1.0
+grow_horizontal=2
+grow_vertical=2
+mouse_filter=2
+script=ExtResource("1_tc")
+
+[node name="LookArea" type="Control" parent="."]
+layout_mode=1
+anchors_preset=15
+anchor_left=0.4
+anchor_right=1.0
+anchor_bottom=1.0
+grow_horizontal=2
+grow_vertical=2
+mouse_filter=1
+
+[node name="Joystick" type="Control" parent="."]
+layout_mode=1
+anchors_preset=23
+anchor_left=0.0
+anchor_top=1.0
+anchor_right=0.0
+anchor_bottom=1.0
+offset_left=24.0
+offset_top=-280.0
+offset_right=280.0
+offset_bottom=-24.0
+grow_horizontal=0
+grow_vertical=0
+script=ExtResource("2_joy")
+
+[node name="BtnFire" type="Button" parent="."]
+layout_mode=1
+anchors_preset=3
+anchor_left=1.0
+anchor_top=1.0
+anchor_right=1.0
+anchor_bottom=1.0
+offset_left=-168.0
+offset_top=-208.0
+offset_right=-48.0
+offset_bottom=-88.0
+grow_horizontal=0
+grow_vertical=0
+text="FIRE"
+
+[node name="BtnAim" type="Button" parent="."]
+layout_mode=1
+anchors_preset=3
+anchor_left=1.0
+anchor_top=1.0
+anchor_right=1.0
+anchor_bottom=1.0
+offset_left=-300.0
+offset_top=-168.0
+offset_right=-200.0
+offset_bottom=-88.0
+grow_horizontal=0
+grow_vertical=0
+text="AIM"
+
+[node name="BtnJump" type="Button" parent="."]
+layout_mode=1
+anchors_preset=3
+anchor_left=1.0
+anchor_top=1.0
+anchor_right=1.0
+anchor_bottom=1.0
+offset_left=-168.0
+offset_top=-340.0
+offset_right=-48.0
+offset_bottom=-240.0
+grow_horizontal=0
+grow_vertical=0
+text="JUMP"
+
+[node name="BtnCrouch" type="Button" parent="."]
+layout_mode=1
+anchors_preset=3
+anchor_left=1.0
+anchor_top=1.0
+anchor_right=1.0
+anchor_bottom=1.0
+offset_left=-300.0
+offset_top=-300.0
+offset_right=-200.0
+offset_bottom=-220.0
+grow_horizontal=0
+grow_vertical=0
+text="CRCH"
+
+[node name="BtnSprint" type="Button" parent="."]
+layout_mode=1
+anchors_preset=3
+anchor_left=1.0
+anchor_top=1.0
+anchor_right=1.0
+anchor_bottom=1.0
+offset_left=-440.0
+offset_top=-168.0
+offset_right=-340.0
+offset_bottom=-88.0
+grow_horizontal=0
+grow_vertical=0
+text="RUN"
+
+[node name="BtnReload" type="Button" parent="."]
+layout_mode=1
+anchors_preset=3
+anchor_left=1.0
+anchor_top=1.0
+anchor_right=1.0
+anchor_bottom=1.0
+offset_left=-440.0
+offset_top=-300.0
+offset_right=-340.0
+offset_bottom=-220.0
+grow_horizontal=0
+grow_vertical=0
+text="RLD"

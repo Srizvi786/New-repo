@@ -1,0 +1,32 @@
+# Godot 4.x
+.godot/
+godot_editor.log
+editor.log
+
+# Export artifacts
+build/
+*.apk
+*.aab
+*.pck
+*.zip
+!/tmp/**/*.zip
+
+# Android / signing — NEVER commit keystores or passwords
+*.keystore
+*.jks
+keystore.properties
+*.env
+.env
+
+# Python / CI
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local overrides
+*.local.cfg
