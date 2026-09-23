@@ -41,6 +41,14 @@ jobs:
           python3 scripts/validate_project.py
           pip install pytest && python3 -m pytest tests/ -q
 
+      - name: Install Android build template (required for gradle/AAB)
+        run: |
+          if [ ! -d android ]; then
+            mkdir -p android
+            unzip -q /tmp/tpl/templates/android_source.zip -d android
+          fi
+          ls android
+
       - name: Export debug APK (free runner, no signing key needed)
         run: |
           mkdir -p build

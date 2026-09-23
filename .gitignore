@@ -5,6 +5,7 @@ editor.log
 
 # Export artifacts
 build/
+android/
 *.apk
 *.aab
 *.pck
