@@ -3,6 +3,7 @@ extends Control
 
 @onready var _hp: ProgressBar = $TopLeft/HP
 @onready var _ammo: Label = $BottomRight/Ammo
+@onready var _slots: Label = $BottomRight/Slots
 @onready var _state: Label = $TopRight/StateLabel
 @onready var _cross: CenterContainer = $Crosshair
 
@@ -31,6 +32,9 @@ func _process(_delta: float) -> void:
 		if wr:
 			wname = str(wr.get("display_name"))
 		_ammo.text = "%d / %d\n%s" % [int(weapon.get("ammo_in_mag")), int(weapon.get("reserve")), wname]
+		var winv = weapon.get("inv")
+		if winv:
+			_slots.text = "  ".join(winv.call("summary"))
 	var aiming := false
 	if player and "aiming" in player:
 		aiming = bool(player.get("aiming"))

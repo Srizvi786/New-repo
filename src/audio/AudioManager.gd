@@ -4,12 +4,15 @@ extends Node
 
 var _sfx: AudioStreamPlayer
 var _ui: AudioStreamPlayer
+var _shot_noise: AudioStreamWAV
 
 func _ready() -> void:
 	_ensure_buses()
+	_shot_noise = _noise_burst(0.12, 2200.0)
 	_sfx = AudioStreamPlayer.new()
 	_sfx.name = "SFX"
 	_sfx.bus = "SFX"
+	_sfx.stream = _shot_noise
 	add_child(_sfx)
 	_ui = AudioStreamPlayer.new()
 	_ui.name = "UI"
@@ -38,8 +41,9 @@ func play_ui() -> void:
 	if _ui and not _ui.playing:
 		_ui.play()
 
-func play_gunshot() -> void:
-	_sfx.stream = _noise_burst(0.12, 2200.0)
+func play_gunshot(pitch: float = 1.0) -> void:
+	_sfx.stream = _shot_noise
+	_sfx.pitch_scale = pitch * randf_range(0.97, 1.03)
 	_sfx.play()
 
 func play_reload() -> void:

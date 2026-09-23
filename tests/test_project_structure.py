@@ -63,9 +63,16 @@ def test_touch_controls_mobile_ready():
 def test_weapon_data_driven():
     txt = _read("src/weapons/WeaponResource.gd")
     assert "class_name WeaponResource" in txt
+    for f in ["pellets", "caliber", "eff_damage", "eff_spread", "attachments"]:
+        assert f in txt, f"WeaponResource missing {f}"
     db = _read("src/weapons/WeaponDatabase.gd")
     for w in ['"ar"', '"smg"', '"shotgun"', '"sniper"', '"pistol"']:
         assert w in db.lower(), f"missing weapon {w}"
+    wv = _read("src/weapons/WeaponView.gd")
+    for f in ["try_fire", "start_reload", "hit_confirmed", "slot", "semi", "automatic", "fall"]:
+        assert f in wv.lower(), f"WeaponView missing {f}"
+    assert os.path.isfile(os.path.join(ROOT, "src/weapons/WeaponInventory.gd"))
+    assert os.path.isfile(os.path.join(ROOT, "src/weapons/AttachmentData.gd"))
 
 def test_no_secrets_committed():
     # NOTE: pattern uses dashed key header to avoid self-matching this file.

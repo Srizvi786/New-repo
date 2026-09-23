@@ -14,6 +14,7 @@ var touch_aim_held: bool = false
 var touch_sprint_held: bool = false
 
 var look_sensitivity: float = 1.0
+var _last_touch_fire: bool = false
 
 func _ready() -> void:
 	ensure_actions()
@@ -36,6 +37,10 @@ func ensure_actions() -> void:
 	_add_mouse("fire", MOUSE_BUTTON_LEFT)
 	_add_mouse("aim", MOUSE_BUTTON_RIGHT)
 	_add_key("pause", [KEY_ESCAPE, KEY_P])
+	_add_key("slot_1", [KEY_1])
+	_add_key("slot_2", [KEY_2])
+	_add_key("slot_3", [KEY_3])
+	_add_key("slot_next", [KEY_Q])
 	_add_joy("jump", JOY_BUTTON_A)
 	_add_joy("crouch", JOY_BUTTON_B)
 	_add_joy("reload", JOY_BUTTON_X)
@@ -87,6 +92,12 @@ func is_aiming() -> bool:
 
 func is_firing() -> bool:
 	return Input.is_action_pressed("fire") or touch_fire_held
+
+func consume_touch_fire_edge() -> bool:
+	# True on the frame touch-fire transitions false -> true.
+	var edge := touch_fire_held and not _last_touch_fire
+	_last_touch_fire = touch_fire_held
+	return edge
 
 func consume_look_delta() -> Vector2:
 	# Mouse motion is fed directly by Player via _input; this drains touch remainder.

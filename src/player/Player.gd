@@ -56,6 +56,12 @@ func _ready() -> void:
 func bind(manager: Node, weapon: Node3D) -> void:
 	input_mgr = manager
 	weapon_view = weapon
+	if weapon_view and weapon_view.has_signal("recoil") and rig and rig.has_method("add_recoil"):
+		weapon_view.connect("recoil", rig.add_recoil)
+	if weapon_view and weapon_view.has_signal("reload_started"):
+		weapon_view.connect("reload_started", play_reload)
+	if weapon_view and weapon_view.has_signal("weapon_changed"):
+		weapon_view.connect("weapon_changed", _on_weapon_changed)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
@@ -144,11 +150,13 @@ func _physics_process(delta: float) -> void:
 	if rig and rig.has_method("set_aiming"):
 		rig.call("set_aiming", aiming)
 	# placeholder fire -> weapon view (full ballistics M3)
+	var move_speed := Vector2(velocity.x, velocity.z).length()
+	var just_pressed := Input.is_action_just_pressed("fire")
+	if input_mgr and bool(input_mgr.call("consume_touch_fire_edge")):
+		just_pressed = true
 	if firing and weapon_view and weapon_view.has_method("try_fire"):
-		if weapon_view.call("try_fire", aiming):
+		if weapon_view.call("try_fire", aiming, move_speed, just_pressed):
 			emit_signal("fired")
-			if rig and rig.has_method("add_recoil"):
-				rig.call("add_recoil", Vector2(0.003, 0.004))
 
 func _rotate_look(d: Vector2) -> void:
 	yaw -= d.x
@@ -187,14 +195,21 @@ func _update_anim_state(_iv: Vector2, firing: bool) -> void:
 	if character_rig:
 		character_rig.set_state(anim_state, speed, firing, aiming)
 
-# --- M2 animation hooks (CharacterRig implements these; real rig keeps the names) ---
+# --- M2/M3 animation hooks (CharacterRig implements these; real rig keeps the names) ---
 func play_shoot() -> void:
 	if character_rig:
 		character_rig.play_shoot()
 
-func play_reload() -> void:
-	if character_rig and weapon_view:
-		character_rig.play_reload(float(weapon_view.get("weapon").get("reload_time")) if weapon_view.get("weapon") else 2.0)
+func play_reload(duration: float = 2.0) -> void:
+	if character_rig:
+		character_rig.play_reload(duration)
+
+func play_weapon_switch() -> void:
+	if character_rig:
+		character_rig.play_weapon_switch()
+
+func _on_weapon_changed() -> void:
+	play_weapon_switch()
 
 func play_hit() -> void:
 	if character_rig:
