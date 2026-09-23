@@ -2,8 +2,11 @@ extends Control
 ## MainMenu — original UI. No copied layouts. Play + quality + sensitivity.
 
 signal play_requested
+signal host_requested
+signal join_requested(ip: String)
 
 @onready var _status: Label = $Panel/VBox/StatusLabel
+@onready var _netstatus: Label = $Panel/VBox/NetStatus
 @onready var _quality: OptionButton = $Panel/VBox/QualityRow/QualityOption
 @onready var _sens: HSlider = $Panel/VBox/SensRow/SensSlider
 
@@ -20,10 +23,26 @@ func _ready() -> void:
 		sens = float(get_node("/root/SaveSystem").get("sensitivity"))
 	_quality.select({"auto": 0, "low": 1, "medium": 2, "high": 3}.get(preset, 0))
 	_sens.value = sens
-	_status.text = "OFFLINE BUILD M1 — bots/match arrive in M7/M8"
+	_status.text = "OFFLINE MATCH — 12 combatants, shrinking zone"
 	$Panel/VBox/PlayButton.pressed.connect(_on_play)
+	$Panel/VBox/NetRow/HostBtn.pressed.connect(func() -> void: emit_signal("host_requested"))
+	$Panel/VBox/NetRow/JoinBtn.pressed.connect(_on_join)
+	_refresh_net()
 	_quality.item_selected.connect(_on_quality)
 	_sens.value_changed.connect(_on_sens)
+
+func _refresh_net() -> void:
+	var n = get_tree().get_first_node_in_group("network_manager")
+	if n:
+		_netstatus.text = str(n.get("status_text"))
+		if not n.is_connected("status_changed", _on_net_status):
+			n.connect("status_changed", _on_net_status)
+
+func _on_net_status(t: String) -> void:
+	_netstatus.text = t
+
+func _on_join() -> void:
+	emit_signal("join_requested", $Panel/VBox/NetRow/IPEdit.text)
 
 func _on_play() -> void:
 	if has_node("/root/AudioManager"):

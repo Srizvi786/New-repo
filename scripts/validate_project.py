@@ -38,6 +38,7 @@ REQUIRED = [
     "src/bots/Bot.gd",
     "src/match/MatchManager.gd",
     "src/match/ZoneManager.gd",
+    "src/net/NetworkManager.gd",
     "src/environment/TestArena.tscn",
     "src/environment/TestArena.gd",
     "src/environment/BattleMap.tscn",

@@ -15,6 +15,13 @@ var player_kills: int = 0
 var match_time: float = 0.0
 var result: Dictionary = {}
 
+func _ready() -> void:
+	add_to_group("match_manager")
+
+func apply_net_state(time_s: float, alive_n: int) -> void:
+	# Passive client mirror (server is authoritative).
+	match_time = time_s
+
 func start_match(p, bots: Array) -> void:
 	player = p
 	player_kills = 0

@@ -232,10 +232,25 @@ func _is_head(collider: Object, pos: Vector3) -> bool:
 func _apply_hit(collider: Object, pos: Vector3, dmg: float, is_head: bool, from: Vector3) -> bool:
 	if collider == null:
 		return false
+	if _net_client() and collider is Node:
+		# Client asks the server; server validates + applies (M11).
+		var net = get_tree().get_first_node_in_group("network_manager")
+		var victim := String((collider as Node).name)
+		if (collider as Node).is_in_group("player"):
+			victim = "You"
+		net.rpc_id(1, "request_damage", victim, dmg, is_head, attacker_name, from.distance_to(pos))
+		return true
 	if collider is Node and (collider as Node).has_method("take_damage"):
 		(collider as Node).call("take_damage", dmg, is_head, attacker_name, from)
 		return true
 	return false
+
+func _net() -> Node:
+	return get_tree().get_first_node_in_group("network_manager")
+
+func _net_client() -> bool:
+	var n = _net()
+	return n != null and bool(n.call("is_active")) and not bool(n.call("is_server"))
 
 func _spawn_tracer(a: Vector3, b: Vector3) -> void:
 	while _tracers.size() >= 24:

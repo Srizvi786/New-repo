@@ -56,6 +56,8 @@ func _pick_next() -> void:
 func _process(delta: float) -> void:
 	if not active:
 		return
+	if _net_client():
+		return # server drives; snapshots set center/radius
 	timer -= delta
 	if mode == "WAIT" and timer <= 0.0:
 		mode = "SHRINK"
@@ -84,6 +86,8 @@ func _process(delta: float) -> void:
 		_apply_dot()
 
 func _apply_dot() -> void:
+	if _net_client():
+		return # server-authoritative damage (M11)
 	for n in get_tree().get_nodes_in_group("player"):
 		if is_instance_valid(n) and bool(n.get("alive")) and not is_inside((n as Node3D).global_position):
 			n.call("take_damage", dps, false, "Zone", (n as Node3D).global_position)
@@ -107,6 +111,16 @@ func status_str(player_pos: Vector3) -> String:
 	elif mode == "SHRINK":
 		return "ZONE SHRINKING%s" % ("" if inside else " — RUN!")
 	return "FINAL ZONE" if inside else "FINAL ZONE — RUN!"
+
+func apply_net_state(c: Vector3, r: float) -> void:
+	active = true
+	center = c
+	radius = r
+	_update_rings()
+
+func _net_client() -> bool:
+	var n = get_tree().get_first_node_in_group("network_manager")
+	return n != null and bool(n.call("is_active")) and not bool(n.call("is_server"))
 
 func _make_ring(c: Color) -> MeshInstance3D:
 	var mi := MeshInstance3D.new()

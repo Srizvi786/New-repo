@@ -88,3 +88,34 @@ theme_override_colors/font_color=Color(0.55, 0.6, 0.62, 1)
 text="status"
 horizontal_alignment=1
 autowrap_mode=2
+
+[node name="NetLabel" type="Label" parent="Panel/VBox"]
+layout_mode=2
+theme_override_font_sizes/font_size=14
+text="MULTIPLAYER (LAN loopback test)"
+
+[node name="NetRow" type="HBoxContainer" parent="Panel/VBox"]
+layout_mode=2
+theme_override_constants/separation=8
+
+[node name="HostBtn" type="Button" parent="Panel/VBox/NetRow"]
+layout_mode=2
+size_flags_horizontal=3
+text="HOST"
+
+[node name="JoinBtn" type="Button" parent="Panel/VBox/NetRow"]
+layout_mode=2
+size_flags_horizontal=3
+text="JOIN"
+
+[node name="IPEdit" type="LineEdit" parent="Panel/VBox/NetRow"]
+layout_mode=2
+size_flags_horizontal=3
+text="127.0.0.1"
+
+[node name="NetStatus" type="Label" parent="Panel/VBox"]
+layout_mode=2
+theme_override_font_sizes/font_size=13
+theme_override_colors/font_color=Color(0.6, 0.85, 1.0, 1)
+text="OFFLINE — bots only"
+horizontal_alignment=1

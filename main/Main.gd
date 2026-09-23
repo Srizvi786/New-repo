@@ -20,11 +20,14 @@ var loot_mgr: Node = null
 var bot_mgr: Node = null
 var match_mgr: Node = null
 var zone_mgr: Node = null
+var net_mgr: Node = null
 var results: Control = null
+var _send_t: float = 0.0
 
 const LOOT_SCRIPT := "res://src/items/LootManager.gd"
 const BOTMGR_SCRIPT := "res://src/bots/BotManager.gd"
 const MATCH_SCRIPT := "res://src/match/MatchManager.gd"
+const NET_SCRIPT := "res://src/net/NetworkManager.gd"
 const ZONE_SCRIPT := "res://src/match/ZoneManager.gd"
 const TFX := preload("res://src/weapons/TracerFX.gd")
 const RESULTS_SCENE := "res://src/ui/Results.tscn"
@@ -41,6 +44,11 @@ func _ready() -> void:
 	audio_mgr.set_script(am_script)
 	audio_mgr.name = "AudioManager"
 	add_child(audio_mgr)
+	var net_script: Script = load(NET_SCRIPT)
+	net_mgr = Node.new()
+	net_mgr.set_script(net_script)
+	net_mgr.name = "NetworkManager"
+	add_child(net_mgr)
 	_show_menu()
 
 func _show_menu() -> void:
@@ -55,6 +63,8 @@ func _show_menu() -> void:
 	menu = packed.instantiate() as Control
 	ui_root.add_child(menu)
 	menu.connect("play_requested", _on_play)
+	menu.connect("host_requested", _on_host)
+	menu.connect("join_requested", _on_join)
 
 func _on_play() -> void:
 	if menu:
@@ -65,6 +75,67 @@ func _on_play() -> void:
 		results = null
 	await get_tree().process_frame
 	await _deploy()
+
+func _on_host() -> void:
+	if menu:
+		menu.queue_free()
+		menu = null
+	if results:
+		results.queue_free()
+		results = null
+	await get_tree().process_frame
+	if not bool(net_mgr.call("host_game", world_root)):
+		_show_menu()
+		return
+	await _deploy()
+
+func _on_join(ip: String) -> void:
+	if menu:
+		menu.queue_free()
+		menu = null
+	if results:
+		results.queue_free()
+		results = null
+	await get_tree().process_frame
+	net_mgr.call("join_game", ip, world_root)
+	var ok := await _wait_client_ready()
+	if not ok:
+		_show_menu()
+		return
+	await _deploy_client()
+
+func _wait_client_ready() -> bool:
+	var t := 0.0
+	while t < 8.0:
+		await get_tree().process_frame
+		# client_ready fires on sync; fall back to connected status text
+		if str(net_mgr.get("status_text")).begins_with("Connected"):
+			return true
+		t += get_process_delta_time()
+	return false
+
+func _deploy_client() -> void:
+	# Client world: same deterministic arena + loot, local predicted player,
+	# passive match HUD. Bots arrive as server-driven proxies.
+	if hud:
+		hud.queue_free()
+		hud = null
+	TFX.clear_pool()
+	var gm := get_node("/root/GameManager")
+	await gm.call("start_play", world_root)
+	_ensure_loot()
+	_spawn_player()
+	_ensure_zone()
+	if match_mgr == null:
+		var ms: Script = load(MATCH_SCRIPT)
+		match_mgr = Node.new()
+		match_mgr.set_script(ms)
+		match_mgr.name = "MatchManager"
+		add_child(match_mgr)
+	if hud:
+		hud.call("bind_match", match_mgr)
+	if not net_mgr.is_connected("feed_received", Callable(hud, "push_kill")):
+		net_mgr.connect("feed_received", Callable(hud, "push_kill"))
 
 func _deploy() -> void:
 	# Full match deploy: arena -> loot -> player -> bots -> match wiring.
@@ -128,6 +199,11 @@ func _start_match() -> void:
 	match_mgr.call("start_match", player, bot_mgr.get("bots"))
 	if hud:
 		hud.call("bind_match", match_mgr)
+		if not net_mgr.is_connected("feed_received", Callable(hud, "push_kill")):
+			net_mgr.connect("feed_received", Callable(hud, "push_kill"))
+	if str(net_mgr.get("mode")) == "HOST":
+		if not match_mgr.is_connected("killfeed", Callable(net_mgr, "_relay_feed")):
+			match_mgr.connect("killfeed", Callable(net_mgr, "_relay_feed"))
 
 func _on_match_ended(result: Dictionary) -> void:
 	# Freeze the battlefield behind the results screen.
@@ -159,6 +235,8 @@ func _to_menu() -> void:
 		bot_mgr.call("clear")
 	if loot_mgr:
 		loot_mgr.call("clear")
+	if net_mgr:
+		net_mgr.call("leave")
 	var gm := get_node("/root/GameManager")
 	gm.call("goto_menu")
 	_show_menu()
@@ -205,9 +283,21 @@ func _spawn_player() -> void:
 	else:
 		touch.visible = false
 
+func _client_send(_delta: float) -> void:
+	if net_mgr == null or str(net_mgr.get("mode")) != "CLIENT":
+		return
+	if player == null or not bool(player.get("alive")):
+		return
+	_send_t += _delta
+	if _send_t < 0.1:
+		return
+	_send_t = 0.0
+	net_mgr.call("send_player_state", player.call("get_state_dict"))
+
 func _process(_delta: float) -> void:
 	if weapon and Input.is_action_just_pressed("reload"):
 		weapon.call("start_reload")
+	_client_send(_delta)
 	if player and loot_mgr and hud and bool(player.get("alive")):
 		var near = loot_mgr.call("nearest", (player as Node3D).position)
 		if near:

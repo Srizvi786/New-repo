@@ -229,6 +229,8 @@ func heal_progress() -> float:
 func take_damage(amount: float, is_head: bool, attacker: String, _from: Vector3 = Vector3.ZERO) -> void:
 	if not alive or health_node == null:
 		return
+	if _net_client():
+		return # server applies; snapshots sync HP back (M11)
 	health_node.take_damage(amount, is_head, attacker)
 	health = float(health_node.get("current"))
 	armor = float(health_node.get("armor"))
@@ -246,6 +248,12 @@ func _on_died(attacker: String) -> void:
 	alive = false
 	play_death()
 	emit_signal("died", attacker)
+
+func _net_client() -> bool:
+	var n = get_tree().get_first_node_in_group("network_manager")
+	if n == null:
+		return false
+	return bool(n.call("is_active")) and not bool(n.call("is_server"))
 
 func _rotate_look(d: Vector2) -> void:
 	yaw -= d.x

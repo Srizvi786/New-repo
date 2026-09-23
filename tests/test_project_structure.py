@@ -138,6 +138,15 @@ def test_opt_m10():
     assert "40.0" in _read("src/items/LootPickup.gd")
     assert "bots" in _read("src/core/PerformanceMonitor.gd")
 
+def test_net_m11():
+    n = _read("src/net/NetworkManager.gd")
+    for f in ["host_game", "join_game", "request_damage", "apply_snapshot",
+              "send_player_state", "is_server", "OFFLINE"]:
+        assert f in n, f"NetworkManager missing {f}"
+    assert "ai_enabled" in _read("src/bots/Bot.gd")
+    assert "HostBtn" in _read("src/ui/MainMenu.tscn")
+    assert "_on_host" in _read("main/Main.gd")
+
 def test_no_secrets_committed():
     # NOTE: pattern uses dashed key header to avoid self-matching this file.
     pat = re.compile(r"ghp_[A-Za-z0-9]{10,}|BEGIN " + "PRIVATE KEY-----")

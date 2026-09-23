@@ -1,6 +1,27 @@
-# Multiplayer — Dustline Strike (design, not yet implemented)
+# Multiplayer — Dustline Strike (M11 LAN baseline implemented)
 
-Offline-first. Bots (M7) + local match sim (M8) come before any networking. No fake "multiplayer" UI ships.
+Offline-first default. Menu shows OFFLINE until HOST/JOIN succeeds.
+
+## What works (M11)
+
+- ENet host/join over LAN/loopback (`NetworkManager`, port 7777, ≤12 peers).
+- Host plays the full match (bots + zone + loot); clients connect and play with
+  local prediction (instant feel) + 10 Hz state sync to the server.
+- **Server-authoritative damage**: clients send `request_damage` RPCs; the
+  server enforces 20 req/s per attacker, 120 dmg and 350 m sanity caps, then
+  applies. Clients never apply damage locally; HP arrives via snapshots.
+- **Anti-teleport**: server ignores client position jumps over 12 m/update.
+- **Snapshots** (10 Hz, unreliable): host/bot/proxy transforms + HP + anim,
+  zone center/radius, match timer. Kill feed relayed to clients.
+- **Deterministic world**: fixed loot/district seeds, so client and server
+  simulate the same arena; only dynamic state is synced.
+
+## Limits (honest)
+
+- No public backend, no matchmaking, no NAT traversal — same-WiFi or
+  loopback (`127.0.0.1`) only. Loot pickups are locally simulated and can
+  desync between peers. Client prediction has no reconciliation beyond HP
+  sync. These are M11-baseline tradeoffs, not a full netcode.
 
 ## Authority plan (M11)
 

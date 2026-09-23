@@ -38,6 +38,7 @@ var think_t: float = 0.0
 var think_interval: float = 0.25
 var speed: float = 4.2
 var corpse_t: float = 0.0
+var ai_enabled: bool = true # false for network proxies (M11): state applied remotely
 
 func setup(nm: String, spawn: Vector3, stagger: float) -> void:
 	bot_name = nm
@@ -80,8 +81,12 @@ func _physics_process(delta: float) -> void:
 	think_t -= delta
 	if think_t <= 0.0:
 		think_t = think_interval
-		_think()
-	_steer(delta)
+		if ai_enabled:
+			_think()
+	if ai_enabled:
+		_steer(delta)
+	else:
+		_proxy_drift(delta)
 	_update_rig()
 
 func _think() -> void:
@@ -218,6 +223,28 @@ func _grab_nearby() -> void:
 	if pk:
 		loot.call("apply_bot_pickup", pk, self)
 
+func _proxy_drift(delta: float) -> void:
+	# Network proxy: no AI, just gravity + network-driven transform.
+	if not is_on_floor():
+		velocity.y -= 22.0 * delta
+	else:
+		velocity.y = -0.5
+	velocity.x = 0.0
+	velocity.z = 0.0
+	move_and_slide()
+
+func apply_net_state(pos: Vector3, yaw: float, hp: float, anim: String, is_alive: bool) -> void:
+	global_position = pos
+	rotation.y = yaw
+	anim_state = anim
+	if health_node and absf(float(health_node.get("current")) - hp) > 0.5:
+		health_node.set("current", clampf(hp, 0.0, float(health_node.get("max_health"))))
+		health = hp
+	if not is_alive and alive:
+		alive = false
+		if character_rig:
+			character_rig.play_death()
+
 func _update_rig() -> void:
 	if character_rig == null:
 		return
@@ -228,6 +255,8 @@ func _update_rig() -> void:
 func take_damage(amount: float, is_head: bool, attacker: String, _from: Vector3 = Vector3.ZERO) -> void:
 	if not alive or health_node == null:
 		return
+	if _net_client():
+		return # server-authoritative (M11)
 	health_node.take_damage(amount, is_head, attacker)
 	health = float(health_node.get("current"))
 	if alive and character_rig:
@@ -259,3 +288,9 @@ func _drop_loot() -> void:
 func get_state_dict() -> Dictionary:
 	return {"pos": global_position, "yaw": rotation.y, "alive": alive,
 		"health": health, "anim": anim_state, "name": bot_name}
+
+func _net_client() -> bool:
+	var n = get_tree().get_first_node_in_group("network_manager")
+	if n == null:
+		return false
+	return bool(n.call("is_active")) and not bool(n.call("is_server"))
