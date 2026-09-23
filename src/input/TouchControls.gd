@@ -24,6 +24,8 @@ func _ready() -> void:
 	_wire_button($BtnSprint, "sprint")
 	_wire_button($BtnReload, "reload")
 	_wire_button($BtnSwap, "slot_next")
+	_wire_button($BtnUse, "interact")
+	_wire_button($BtnInv, "inventory")
 	# Auto-show on real touch devices
 	if DisplayServer.is_touchscreen_available():
 		visible = true
@@ -56,7 +58,7 @@ func _on_btn_down(action: String) -> void:
 			input_mgr.set("touch_aim_held", true)
 		"sprint":
 			input_mgr.set("touch_sprint_held", true)
-		"jump", "crouch", "reload", "slot_next":
+		"jump", "crouch", "reload", "slot_next", "interact", "inventory", "heal":
 			Input.action_press(action)
 
 func _on_btn_up(action: String) -> void:
@@ -69,7 +71,7 @@ func _on_btn_up(action: String) -> void:
 			input_mgr.set("touch_aim_held", false)
 		"sprint":
 			input_mgr.set("touch_sprint_held", false)
-		"jump", "crouch", "reload", "slot_next":
+		"jump", "crouch", "reload", "slot_next", "interact", "inventory", "heal":
 			Input.action_release(action)
 
 func _input(event: InputEvent) -> void:

@@ -8,10 +8,16 @@ extends Control
 @onready var _state: Label = $TopRight/StateLabel
 @onready var _cross: CenterContainer = $Crosshair
 @onready var _hitmark: Label = $Crosshair/Hitmark
+@onready var _prompt: Label = $InteractPrompt
+@onready var _panel: PanelContainer = $InvPanel
+@onready var _cap: Label = $InvPanel/Margin/InvBox/CapLabel
+@onready var _items_box: VBoxContainer = $InvPanel/Margin/InvBox/ItemsBox
 
 var player: Node = null
 var weapon: Node = null
+var loot_mgr: Node = null
 var _hit_t: float = 0.0
+var _msg_t: float = 0.0
 
 func _ready() -> void:
 	visible = false
@@ -21,9 +27,31 @@ func bind(p: Node, w: Node) -> void:
 	weapon = w
 	visible = true
 	_hit_t = 0.0
+	_panel.visible = false
+	loot_mgr = get_tree().get_first_node_in_group("loot_manager")
 	if weapon and weapon.has_signal("hit_confirmed"):
 		if not weapon.is_connected("hit_confirmed", _on_hit_confirmed):
 			weapon.connect("hit_confirmed", _on_hit_confirmed)
+	if player and player.get("inventory"):
+		var inv = player.get("inventory")
+		if inv.has_signal("changed") and not inv.is_connected("changed", _rebuild_list):
+			inv.connect("changed", _rebuild_list)
+
+func set_prompt(t: String) -> void:
+	if _msg_t <= 0.0:
+		_prompt.text = t
+
+func flash_message(t: String) -> void:
+	_prompt.text = t
+	_msg_t = 2.0
+
+func toggle_inventory() -> void:
+	_panel.visible = not _panel.visible
+	if _panel.visible:
+		_rebuild_list()
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	elif not DisplayServer.is_touchscreen_available():
+		pass # Main decides capture; leave as-is to avoid fighting Player
 
 func show_hitmarker(killed: bool) -> void:
 	_hit_t = 0.3 if killed else 0.15
@@ -37,6 +65,8 @@ func _on_hit_confirmed(hit: bool, _head: bool) -> void:
 func _process(_delta: float) -> void:
 	if not visible:
 		return
+	if _msg_t > 0.0:
+		_msg_t -= _delta
 	if _hit_t > 0.0:
 		_hit_t -= _delta
 		if _hit_t <= 0.0:
@@ -61,3 +91,81 @@ func _process(_delta: float) -> void:
 	if player and "aiming" in player:
 		aiming = bool(player.get("aiming"))
 	_cross.visible = aiming or Input.is_action_pressed("fire")
+	# heal channel indicator
+	if player and player.has_method("heal_progress"):
+		var hp: float = player.call("heal_progress")
+		if hp >= 0.0:
+			_state.text = "Healing... %d%%" % int(hp * 100.0)
+
+func _input(event: InputEvent) -> void:
+	if not visible or player == null:
+		return
+	if event.is_action_pressed("inventory"):
+		toggle_inventory()
+	elif event.is_action_pressed("heal"):
+		_quick_heal()
+
+func _quick_heal() -> void:
+	# First bandage/medkit stack found.
+	var inv = player.get("inventory")
+	if inv == null:
+		return
+	for i in range(inv.stacks.size()):
+		var res = inv.peek(i)
+		if res and str(res.get("kind")) == "heal":
+			if player.call("use_item", i):
+				flash_message("Using " + str(res.get("display_name")) + "...")
+			else:
+				flash_message("Health already full")
+			return
+	flash_message("No heals in backpack")
+
+func _rebuild_list() -> void:
+	if not _panel.visible or player == null:
+		return
+	for c in _items_box.get_children():
+		c.queue_free()
+	var inv = player.get("inventory")
+	if inv == null:
+		return
+	_cap.text = "BACKPACK  %d/8" % inv.slots_used()
+	if inv.stacks.is_empty():
+		var empty := Label.new()
+		empty.text = "(empty — walk over glowing loot, press E / USE)"
+		_items_box.add_child(empty)
+		return
+	for i in range(inv.stacks.size()):
+		var res = inv.peek(i)
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 8)
+		var lab := Label.new()
+		lab.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		lab.text = "%s x%d" % [str(res.get("display_name")), int(inv.stacks[i]["count"])]
+		row.add_child(lab)
+		var kind := str(res.get("kind"))
+		if kind == "heal" or kind == "armor":
+			var use_b := Button.new()
+			use_b.text = "Use"
+			use_b.pressed.connect(_on_use_item.bind(i))
+			row.add_child(use_b)
+		var drop_b := Button.new()
+		drop_b.text = "Drop"
+		drop_b.pressed.connect(_on_drop_item.bind(i))
+		row.add_child(drop_b)
+		_items_box.add_child(row)
+
+func _on_use_item(i: int) -> void:
+	if player.call("use_item", i):
+		flash_message("Used item")
+		_rebuild_list()
+	else:
+		flash_message("Cannot use now")
+
+func _on_drop_item(i: int) -> void:
+	if loot_mgr == null:
+		loot_mgr = get_tree().get_first_node_in_group("loot_manager")
+	if loot_mgr and player:
+		var res = player.get("inventory").call("drop", i)
+		if res:
+			loot_mgr.call("drop_at", res, (player as Node3D).position)
+			_rebuild_list()

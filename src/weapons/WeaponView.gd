@@ -118,16 +118,16 @@ func _equip_current() -> void:
 	_sync_ammo()
 	emit_signal("weapon_changed")
 
-func give_weapon(res) -> bool:
-	# Add or swap. Returns true if equipped. Old weapon is dropped by caller (M5).
+func give_weapon(res):
+	# Add or swap. Returns the replaced weapon (caller drops it) or null.
 	inv.set_mag(inv.current, ammo_in_mag)
 	var idx: int = inv.add_weapon(res)
 	if idx >= 0:
 		_equip_current()
-		return true
+		return null
 	var old = inv.replace_current(res)
 	_equip_current()
-	return old != null
+	return old
 
 func try_fire(aiming: bool, move_speed: float, just_pressed: bool) -> bool:
 	if weapon == null or _cooldown > 0.0 or _reloading > 0.0 or inv.switch_cd > 0.0:

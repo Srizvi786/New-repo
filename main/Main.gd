@@ -16,6 +16,9 @@ var hud: Control = null
 var touch: Control = null
 var player: CharacterBody3D = null
 var weapon: Node3D = null
+var loot_mgr: Node = null
+
+const LOOT_SCRIPT := "res://src/items/LootManager.gd"
 
 func _ready() -> void:
 	# Runtime helpers (kept out of the .tscn so Main.tscn stays trivial/robust).
@@ -51,7 +54,20 @@ func _on_play() -> void:
 	await get_tree().process_frame
 	var gm := get_node("/root/GameManager")
 	await gm.call("start_play", world_root)
+	_ensure_loot()
 	_spawn_player()
+
+func _ensure_loot() -> void:
+	if loot_mgr == null:
+		var ls: Script = load(LOOT_SCRIPT)
+		loot_mgr = Node.new()
+		loot_mgr.set_script(ls)
+		loot_mgr.name = "LootManager"
+		add_child(loot_mgr)
+		await get_tree().process_frame
+	var arena := world_root.get_child(world_root.get_child_count() - 1)
+	if arena and arena.has_method("get_loot_points"):
+		loot_mgr.call("spawn_loot", arena.call("get_loot_points"))
 
 func _on_player_died(_attacker: String) -> void:
 	# M4 test loop: redeploy after 3s. M8 replaces this with the results screen.
@@ -111,6 +127,16 @@ func _spawn_player() -> void:
 func _process(_delta: float) -> void:
 	if weapon and Input.is_action_just_pressed("reload"):
 		weapon.call("start_reload")
+	if player and loot_mgr and hud and bool(player.get("alive")):
+		var near = loot_mgr.call("nearest", (player as Node3D).position)
+		if near:
+			hud.call("set_prompt", "Pick up %s  [E / USE]" % str(near.get("item").get("display_name")))
+			if Input.is_action_just_pressed("interact"):
+				var msg: String = loot_mgr.call("apply_pickup", near, player, weapon)
+				if msg != "":
+					hud.call("flash_message", msg)
+		else:
+			hud.call("set_prompt", "")
 	# Show touch layer the moment any touch arrives (covers ChromeOS hybrids).
 	if touch and not touch.visible and DisplayServer.is_touchscreen_available():
 		touch.visible = true

@@ -85,7 +85,21 @@ def test_combat_m4():
     assert "show_hitmarker" in hud and "Armor" in hud
     assert "Hitmark" in _read("src/ui/HUD.tscn")
 
-def test_no_secrets_committed():    # NOTE: pattern uses dashed key header to avoid self-matching this file.
+def test_loot_m5():
+    it = _read("src/items/ItemDatabase.gd")
+    for f in ['"bandage"', '"medkit"', '"vest"', '"ammo_medium"', '"w_smg"', '"att_suppressor"']:
+        assert f in it, f"ItemDatabase missing {f}"
+    inv = _read("src/items/Inventory.gd")
+    assert "MAX_SLOTS" in inv and "consume" in inv
+    lm = _read("src/items/LootManager.gd")
+    for f in ["spawn_loot", "nearest", "apply_pickup", "drop_at"]:
+        assert f in lm, f"LootManager missing {f}"
+    assert "BtnUse" in _read("src/input/TouchControls.tscn")
+    assert "InvPanel" in _read("src/ui/HUD.tscn")
+    assert "use_item" in _read("src/player/Player.gd")
+
+def test_no_secrets_committed():
+    # NOTE: pattern uses dashed key header to avoid self-matching this file.
     pat = re.compile(r"ghp_[A-Za-z0-9]{10,}|BEGIN " + "PRIVATE KEY-----")
     for root, _dirs, files in os.walk(ROOT):
         if ".git" in root or ".godot" in root:

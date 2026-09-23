@@ -10,6 +10,11 @@ func _ready() -> void:
 		var sun := $Sun as DirectionalLight3D
 		get_node("/root/QualityManager").call("apply_to_light", sun)
 
+var loot_points: Array = []
+
+func get_loot_points() -> Array:
+	return loot_points
+
 func get_spawn_transform() -> Transform3D:
 	var m := $SpawnPoint as Marker3D
 	if m:
@@ -116,6 +121,9 @@ func _build_cover() -> void:
 		spots.append(Vector3(x, 0, z))
 	for s in spots:
 		_spawn_crate(s, rng.randf_range(0.0, TAU))
+		loot_points.append(s + Vector3(1.8, 0, 0))
+	for k in range(6):
+		loot_points.append(Vector3(rng.randf_range(-8.0, 8.0), 0, rng.randf_range(-2.0, 10.0)))
 
 func _spawn_crate(pos: Vector3, rot_y: float) -> void:
 	var body := StaticBody3D.new()

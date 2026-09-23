@@ -6,6 +6,7 @@ class_name Player
 
 const CRig := preload("res://src/player/CharacterRig.gd")
 const HealthScript := preload("res://src/combat/Health.gd")
+const InvScript := preload("res://src/items/Inventory.gd")
 
 signal died(attacker: String)
 
@@ -38,6 +39,9 @@ var health: float = 100.0 # synced from Health node; full combat in M4
 var armor: float = 0.0
 var alive: bool = true
 var health_node = null
+var inventory = null
+var heal_t: float = 0.0
+var heal_pending: float = 0.0
 
 var character_rig: CRig = null
 var _stand_height: float = 1.8
@@ -53,6 +57,7 @@ func _ready() -> void:
 	health_node.name = "Health"
 	add_child(health_node)
 	health_node.connect("died", _on_died)
+	inventory = InvScript.new()
 	character_rig = CRig.new()
 	character_rig.name = "CharacterRig"
 	add_child(character_rig)
@@ -165,6 +170,13 @@ func _physics_process(delta: float) -> void:
 		emit_signal("landed")
 	on_ground_last = is_on_floor()
 	var firing := Input.is_action_pressed("fire") or (input_mgr and bool(input_mgr.get("touch_fire_held")))
+	# Heal channel: moving allowed, firing blocked.
+	if heal_t > 0.0:
+		heal_t -= delta
+		if heal_t <= 0.0 and health_node:
+			health_node.heal(heal_pending)
+			heal_pending = 0.0
+		firing = false
 	_update_anim_state(iv, firing)
 	if rig and rig.has_method("set_aiming"):
 		rig.call("set_aiming", aiming)
@@ -179,6 +191,39 @@ func _physics_process(delta: float) -> void:
 	if health_node:
 		health = float(health_node.get("current"))
 		armor = float(health_node.get("armor"))
+
+# --- M5 consumables ---
+func start_heal(amount: float) -> bool:
+	if not alive or heal_t > 0.0 or health_node == null:
+		return false
+	if float(health_node.get("current")) >= float(health_node.get("max_health")):
+		return false
+	heal_t = 2.5
+	heal_pending = amount
+	return true
+
+func use_item(idx: int) -> bool:
+	if inventory == null:
+		return false
+	var res = inventory.peek(idx)
+	if res == null:
+		return false
+	if str(res.get("kind")) == "heal":
+		if start_heal(float(res.get("heal_amount"))):
+			inventory.consume(idx)
+			return true
+		return false
+	if str(res.get("kind")) == "armor":
+		if health_node:
+			health_node.add_armor(float(res.get("armor_amount")))
+			inventory.consume(idx)
+			return true
+	return false
+
+func heal_progress() -> float:
+	if heal_t <= 0.0:
+		return -1.0
+	return 1.0 - heal_t / 2.5
 
 # --- M4 damage interface (WeaponView hits call this) ---
 func take_damage(amount: float, is_head: bool, attacker: String, _from: Vector3 = Vector3.ZERO) -> void:
